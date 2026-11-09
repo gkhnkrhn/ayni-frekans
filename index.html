@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aynı Frekans</title>
+<meta name="description" content="Birbirinizi ne kadar tanıyorsunuz? 2–8 kişilik, sunucusuz, 6 haneli kodla bağlanılan tahmin oyunu.">
+<meta name="theme-color" content="#16113A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2316113A'/%3E%3Cpath d='M8 32c6-14 10-14 16 0s10 14 16 0 10-14 16 0' fill='none' stroke='%234FD1FF' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M8 32c6 14 10 14 16 0s10-14 16 0 10 14 16 0' fill='none' stroke='%23FF6F91' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#16113A;
+  --panel:rgba(255,255,255,.055);
+  --panel-2:rgba(255,255,255,.1);
+  --line:rgba(255,255,255,.13);
+  --ink:#F4F0FF;
+  --muted:#A9A1D3;
+  --dim:#7C74AB;
+  --a:#4FD1FF;
+  --b:#FF6F91;
+  --gold:#FFD166;
+  --ok:#62E6A8;
+  --bad:#FF8080;
+  --display:'Unbounded','Arial Rounded MT Bold',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;
+  font:400 16px/1.5 var(--body);color:var(--ink);
+  background:
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px) 0 0/100% 32px,
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px) 0 0/32px 100%,
+    var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--a);outline-offset:3px}
+.hidden{display:none!important}
+
+#app{
+  max-width:580px;margin:0 auto;
+  padding:max(10px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) calc(36px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:6px 4px;cursor:pointer;font:700 15px var(--display);letter-spacing:.01em}
+.brand svg{width:34px;height:20px;overflow:visible}
+.top-r{display:flex;align-items:center;gap:8px}
+.pill{font:600 13px var(--display);letter-spacing:.08em;padding:7px 12px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);cursor:pointer}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:17px;display:grid;place-items:center}
+.timebar{height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin:2px 0 6px;visibility:hidden}
+.timebar.on{visibility:visible}
+.timebar i{display:block;height:100%;width:100%;background:var(--a);border-radius:4px;transition:width .25s linear,background .3s}
+.timebar.low i{background:var(--b)}
+
+/* generic */
+.screen{padding-top:6px}
+.enter > *{animation:rise .42s cubic-bezier(.2,.8,.2,1) both}
+.enter > *:nth-child(2){animation-delay:.05s}
+.enter > *:nth-child(3){animation-delay:.1s}
+.enter > *:nth-child(4){animation-delay:.15s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.btn{
+  appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:48px;padding:12px 20px;border-radius:999px;
+  border:1px solid var(--line);background:var(--panel-2);
+  font:600 16px/1.1 var(--body);cursor:pointer;text-decoration:none;
+  transition:transform .12s ease,background .2s,border-color .2s,opacity .2s;
+}
+.btn:hover{background:rgba(255,255,255,.15)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:transparent;font:700 16px/1.1 var(--display);letter-spacing:.01em}
+.btn.primary:hover{background:#fff}
+.btn.big{width:100%;min-height:60px;font-size:17px}
+.btn.sm{min-height:40px;padding:8px 14px;font-size:14px}
+.btn.ghost{background:none}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:10px;font-size:14px}
+.lbl{display:block;font-size:14px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.muted{color:var(--muted)}
+.hint{color:var(--dim);font-size:14px;margin:10px 0 0}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin:8px 0 0;text-align:center}
+
+.field{
+  width:100%;font:500 18px/1.3 var(--body);
+  background:rgba(0,0,0,.24);border:1.5px solid var(--line);border-radius:16px;
+  padding:15px 16px;outline:none;transition:border-color .2s,background .2s;
+}
+.field::placeholder{color:var(--dim)}
+.field:focus{border-color:var(--c,var(--a));background:rgba(0,0,0,.32)}
+.field:disabled{opacity:.75}
+
+.av{
+  --c:var(--a);
+  display:inline-grid;place-items:center;flex:none;
+  width:42px;height:42px;border-radius:50%;font-size:22px;line-height:1;
+  background:color-mix(in srgb,var(--c) 20%,transparent);
+  box-shadow:inset 0 0 0 2px var(--c);
+}
+.av.sm{width:30px;height:30px;font-size:16px}
+.av.xs{width:24px;height:24px;font-size:13px;box-shadow:inset 0 0 0 1.5px var(--c)}
+.av.lg{width:64px;height:64px;font-size:34px;box-shadow:inset 0 0 0 3px var(--c)}
+
+/* home */
+.hero{position:relative;padding:8px 0 4px}
+.wave{display:block;width:100%;height:120px;overflow:visible}
+.wave path{fill:none;stroke-width:4;stroke-linecap:round;mix-blend-mode:screen}
+.wave .wa{stroke:var(--wa,var(--a));filter:drop-shadow(0 0 6px var(--wa,var(--a)))}
+.wave .wb{stroke:var(--wb,var(--b));filter:drop-shadow(0 0 6px var(--wb,var(--b)))}
+.title{font:800 clamp(46px,14vw,76px)/.95 var(--display);letter-spacing:-.03em;margin:6px 0 16px}
+.lede{font-size:17px;color:var(--muted);max-width:34em;margin:0 0 26px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:20px}
+.panel + .panel{margin-top:14px}
+.avatars{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;margin:0 -2px;scrollbar-width:none}
+.avatars::-webkit-scrollbar{display:none}
+.avpick{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:rgba(0,0,0,.2);font-size:23px;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.avpick.on{border-color:var(--ink);background:rgba(255,255,255,.14);transform:scale(1.08)}
+.stack{display:grid;gap:12px;margin-top:16px}
+.join-row{display:flex;gap:10px}
+.code-in{
+  flex:1;min-width:0;text-align:center;font:700 26px/1 var(--display);letter-spacing:.32em;
+  padding:14px 6px 14px 14px;background:rgba(0,0,0,.24);border:1.5px solid var(--line);border-radius:16px;outline:none;
+}
+.code-in::placeholder{color:rgba(255,255,255,.18)}
+.code-in:focus{border-color:var(--a)}
+.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:14px;margin:4px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.invite{border-color:color-mix(in srgb,var(--a) 50%,transparent);background:color-mix(in srgb,var(--a) 9%,transparent)}
+.invite b{font-family:var(--display);letter-spacing:.08em}
+.notice{background:color-mix(in srgb,var(--bad) 14%,transparent);border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);border-radius:16px;padding:14px 16px;margin:0 0 14px;font-size:15px}
+.how{margin-top:22px;border-top:1px solid var(--line);padding-top:6px}
+.how summary{cursor:pointer;font-weight:600;padding:12px 0;list-style:none;display:flex;justify-content:space-between}
+.how summary::after{content:"+";font:600 20px var(--display);color:var(--muted)}
+.how[open] summary::after{content:"–"}
+.how summary::-webkit-details-marker{display:none}
+.how ol{margin:0;padding-left:20px;color:var(--muted)}
+.how li{margin:0 0 10px}
+.how li b{color:var(--ink);font-weight:600}
+.foot-note{text-align:center;color:var(--dim);font-size:13px;margin-top:26px}
+
+/* connecting */
+.center{min-height:56vh;display:grid;place-content:center;text-align:center;gap:18px}
+.spinner{width:64px;height:64px;margin:0 auto}
+.spinner path{fill:none;stroke-width:4;stroke-linecap:round}
+.spinner .wa{stroke:var(--a);stroke-dasharray:24 80;animation:dash 1.2s linear infinite}
+.spinner .wb{stroke:var(--b);stroke-dasharray:24 80;animation:dash 1.2s linear infinite reverse}
+@keyframes dash{to{stroke-dashoffset:-104}}
+
+/* lobby */
+.code-box{text-align:center;padding:10px 0 22px}
+.code{display:inline-flex;gap:.28em;background:none;border:0;cursor:pointer;font:800 clamp(52px,16vw,78px)/1 var(--display);letter-spacing:.05em;padding:6px 10px;margin:2px 0 14px;border-radius:18px}
+.code:hover{background:var(--panel)}
+.code-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.sec{margin-top:26px}
+.sec h3{display:flex;align-items:baseline;justify-content:space-between;font:600 15px var(--display);margin:0 0 12px}
+.sec h3 .muted{font:500 14px var(--body)}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:var(--panel);border:1px solid var(--line)}
+.plist .nm{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .badge{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+.plist li.off{opacity:.45}
+.plist li.empty{background:none;border-style:dashed;color:var(--dim);font-size:14px;justify-content:center;min-height:62px}
+.avbtn{background:none;border:0;padding:0;cursor:pointer;border-radius:50%}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode{
+  text-align:left;padding:14px;border-radius:18px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer;
+  display:grid;gap:4px;transition:border-color .2s,background .2s;
+}
+.mode .mt{font:600 15px var(--display)}
+.mode .md{font-size:13px;color:var(--muted);line-height:1.35}
+.mode.on{border-color:var(--ink);background:rgba(255,255,255,.12)}
+.mode:disabled{cursor:default}
+.mode.on:disabled{opacity:1}
+.packs{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:999px;
+  border:1.5px dashed rgba(255,255,255,.2);background:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--dim);transition:.15s;
+}
+.chip small{font-weight:500;color:var(--dim)}
+.chip:not(.on) > :first-child{filter:grayscale(1);opacity:.6}
+.chip.on{color:var(--ink);border:1.5px solid rgba(255,255,255,.7);background:rgba(255,255,255,.14)}
+.chip.on small{color:var(--muted)}
+.chip:disabled{cursor:default}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:16px;padding:4px;gap:4px}
+.seg button{border:0;background:none;border-radius:12px;padding:10px 6px;cursor:pointer;display:grid;gap:2px;color:var(--muted);font-weight:600}
+.seg button small{font-weight:500;font-size:12px;color:var(--dim)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.seg button.on small{color:#4d4775}
+.seg button:disabled{cursor:default}
+.toggles{display:grid;gap:8px}
+.tog{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:var(--panel);border:1px solid var(--line);cursor:pointer;text-align:left;width:100%}
+.tog .tt{flex:1}
+.tog .tt b{display:block;font-weight:600}
+.tog .tt span{font-size:13px;color:var(--muted)}
+.sw{width:46px;height:28px;border-radius:999px;background:rgba(255,255,255,.16);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
+.tog.on .sw{background:var(--ok)}
+.tog.on .sw::after{transform:translateX(18px)}
+.tog:disabled{cursor:default}
+.est{margin:18px 0 0;padding:14px 16px;border-radius:16px;background:rgba(0,0,0,.22);color:var(--muted);font-size:14px}
+.est b{color:var(--ink)}
+.dock{margin-top:26px}
+
+/* round intro */
+.intro{min-height:60vh;display:flex;flex-direction:column;justify-content:center}
+.dots{display:flex;gap:8px;margin-bottom:22px}
+.dots i{width:34px;height:6px;border-radius:6px;background:rgba(255,255,255,.14)}
+.dots i.done{background:rgba(255,255,255,.45)}
+.dots i.cur{background:var(--ink)}
+.kicker{font-size:15px;color:var(--muted);font-weight:600;margin:0 0 6px}
+.big-title{font:800 clamp(52px,17vw,96px)/.95 var(--display);letter-spacing:-.03em;margin:0 0 16px}
+.intro p{font-size:18px;color:var(--muted);margin:0;max-width:26em}
+.x2{display:inline-block;margin-top:18px;font:700 15px var(--display);color:var(--bg);background:var(--gold);padding:8px 14px;border-radius:999px}
+
+/* answer */
+.meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink);background:var(--panel-2);padding:6px 11px;border-radius:999px;font-size:13px}
+.secs{font:600 14px var(--display);color:var(--ink);min-width:3ch;text-align:right}
+.status{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+.st{position:relative}
+.st .av{opacity:.5;transition:opacity .2s}
+.st.done .av{opacity:1}
+.st.done::after{content:"✓";position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--ok);color:#0d2a1d;font:800 10px/16px var(--body);text-align:center}
+.st.off .av{opacity:.2;filter:grayscale(1)}
+.q{font:600 clamp(23px,6.2vw,31px)/1.22 var(--display);letter-spacing:-.015em;margin:18px 0 22px;text-wrap:balance;overflow-wrap:anywhere}
+.q.sm{font-size:clamp(19px,5vw,23px);margin:14px 0 18px}
+.multnote{display:inline-block;margin:-8px 0 18px;font:600 13px var(--display);color:var(--gold)}
+.block{margin:0 0 16px}
+.block-h{display:flex;align-items:center;gap:10px;font-weight:600;margin:0 0 10px;font-size:16px}
+.block.guess{padding:16px;border-radius:24px;background:color-mix(in srgb,var(--c) 9%,transparent);border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.opt{
+  --c:var(--a);
+  min-height:52px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:rgba(0,0,0,.2);
+  cursor:pointer;text-align:left;font-weight:600;font-size:15px;line-height:1.25;transition:background .15s,border-color .15s,transform .1s;
+}
+.opt:active{transform:scale(.98)}
+.opt.on{background:var(--c);border-color:var(--c);color:#130f30}
+.opt:disabled{cursor:default}
+.opt:disabled:not(.on){opacity:.45}
+.scale{padding:6px 2px 0}
+.scale input{width:100%;-webkit-appearance:none;appearance:none;height:34px;background:none;cursor:pointer;margin:0}
+.scale input::-webkit-slider-runnable-track{height:8px;border-radius:8px;background:linear-gradient(90deg,var(--c,var(--a)) var(--p,50%),rgba(255,255,255,.14) var(--p,50%))}
+.scale input::-moz-range-track{height:8px;border-radius:8px;background:rgba(255,255,255,.14)}
+.scale input::-moz-range-progress{height:8px;border-radius:8px;background:var(--c,var(--a))}
+.scale input::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid var(--c,var(--a));margin-top:-11px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.scale input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--c,var(--a))}
+.scale input:disabled{cursor:default;opacity:.8}
+.scale-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-top:4px}
+.scale-row span{flex:1}
+.scale-row span:last-child{text-align:right}
+.scale-row output{font:700 24px var(--display);color:var(--ink);min-width:2ch;text-align:center}
+.jokers{display:flex;gap:8px;margin:4px 0 16px}
+.jk{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:16px;border:1.5px dashed var(--line);background:none;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.jk b{font:700 14px var(--display);color:var(--ink)}
+.jk.on{border-style:solid;border-color:var(--gold);color:var(--ink);background:color-mix(in srgb,var(--gold) 14%,transparent)}
+.jk:disabled{opacity:.35;cursor:default}
+.waiting{text-align:center;padding:18px;border-radius:22px;background:var(--panel);border:1px solid var(--line)}
+.waiting .ok{font:600 17px var(--display);margin-bottom:4px}
+.waiting .row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+
+/* reveal */
+.cards{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:16px;position:relative;overflow:hidden}
+.card.mine{border-color:rgba(255,255,255,.3)}
+.link-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.link-row svg{flex:1;height:14px;min-width:30px}
+.link-row .nm{font-size:13px;font-weight:600;color:var(--muted);max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.say{padding:12px;border-radius:16px;background:rgba(0,0,0,.22);min-width:0}
+.say .who{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.say .txt{font-weight:700;font-size:17px;line-height:1.25;overflow-wrap:anywhere}
+.say.empty .txt{color:var(--dim);font-weight:500}
+.track{position:relative;height:56px;margin:4px 6px 0}
+.track .ln{position:absolute;left:0;right:0;top:27px;height:4px;border-radius:4px;background:rgba(255,255,255,.14)}
+.track .mk{position:absolute;top:0;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;font:700 13px var(--display)}
+.track .mk i{width:16px;height:16px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px var(--bg);margin-top:4px}
+.track .mk.up{top:auto;bottom:0}
+.track .mk.up i{order:-1;margin:0 0 4px}
+.track-legend{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);gap:10px;margin-top:8px}
+.track-legend span{display:flex;align-items:center;gap:6px}
+.track-legend i{width:10px;height:10px;border-radius:50%;background:var(--c);display:inline-block}
+.res{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;min-height:40px}
+.res .verdict{font-weight:700;font-size:15px}
+.res .pts{font:800 26px var(--display);color:var(--gold)}
+.res .pts small{font:600 12px var(--body);color:var(--muted);margin-left:6px}
+.res.miss .pts{color:var(--dim)}
+.res.wait{color:var(--muted);font-size:14px;justify-content:flex-start}
+.judge{margin-top:12px}
+.judge p{margin:0 0 8px;font-weight:600;font-size:15px}
+.judge .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.judge .btn{min-height:50px;padding:8px;font-size:14px;flex-direction:column;gap:2px;border-radius:16px}
+.judge .btn small{font-size:12px;color:var(--muted);font-weight:500}
+.judge .j2{border-color:var(--ok)}
+.judge .j1{border-color:var(--gold)}
+.match{margin-top:12px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:600;background:linear-gradient(90deg,color-mix(in srgb,var(--a) 22%,transparent),color-mix(in srgb,var(--b) 22%,transparent))}
+.reacts{display:flex;justify-content:center;gap:6px;margin:18px 0 6px}
+.react{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:22px;cursor:pointer;transition:transform .12s}
+.react:active{transform:scale(1.25)}
+.mini{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:14px 0 4px}
+.mini span{display:flex;align-items:center;gap:6px;font:700 15px var(--display)}
+.mini em{font:600 12px var(--body);color:var(--gold);font-style:normal}
+.dock .count{text-align:center;color:var(--muted);font-size:14px;margin-top:8px}
+
+/* scoreboard */
+.board{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.board li{display:grid;grid-template-columns:28px auto 1fr auto;align-items:center;gap:10px;padding:10px 14px 10px 10px;border-radius:18px;background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+.board li .bar{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--c) 16%,transparent);z-index:0;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.board li > *{position:relative;z-index:1}
+.board .rk{font:700 15px var(--display);color:var(--muted);text-align:center}
+.board .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .sc{font:800 22px var(--display)}
+.board li.first .rk{color:var(--gold)}
+.next-up{margin:22px 0 0;padding:16px;border-radius:20px;border:1px dashed var(--line);color:var(--muted)}
+.next-up b{color:var(--ink);font-family:var(--display);font-weight:600}
+
+/* final */
+.final{text-align:center}
+.final .wave{height:110px}
+.pct{font:800 clamp(64px,22vw,110px)/1 var(--display);letter-spacing:-.04em;margin:6px 0 4px}
+.tier{font:600 20px var(--display);margin:0 0 4px}
+.tier-d{color:var(--muted);margin:0 auto 22px;max-width:26em}
+.winner{font:700 22px var(--display);margin:24px 0 14px}
+.final .board{text-align:left}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 8px}
+.stat b{display:block;font:800 22px var(--display)}
+.stat span{font-size:12.5px;color:var(--muted);line-height:1.3;display:block}
+.recap{text-align:left;margin-top:24px}
+.recap > summary{cursor:pointer;font-weight:600;padding:14px 16px;border-radius:18px;background:var(--panel);border:1px solid var(--line);list-style:none}
+.recap > summary::-webkit-details-marker{display:none}
+.recap ol{margin:12px 0 0;padding:0 0 0 22px;display:grid;gap:14px}
+.recap li{color:var(--muted)}
+.recap li > b{color:var(--ink);display:block;margin-bottom:6px}
+.rc{font-size:14px;padding:4px 0 6px;line-height:1.4}
+.rc .ans{color:var(--ink)}
+.rc .who{font-weight:600;color:var(--ink)}
+.rc .gs{font-size:13px;padding-left:24px}
+.rc .ok{color:var(--ok)}
+.rc .meh{color:var(--gold)}
+.rc .no{color:var(--dim)}
+.btn-row{display:grid;gap:10px;margin-top:22px}
+
+/* overlays */
+#toasts{position:fixed;left:50%;top:calc(66px + env(safe-area-inset-top));transform:translateX(-50%);display:grid;gap:8px;z-index:60;width:min(92vw,420px);pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:16px;font-weight:600;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:toastIn .3s ease both;text-align:center}
+.toast.out{animation:toastOut .3s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-10px)}}
+#floaters{position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden}
+.fl{position:absolute;bottom:-40px;font-size:36px;animation:floatUp 2.4s cubic-bezier(.3,.7,.4,1) forwards}
+@keyframes floatUp{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1;transform:translateY(-12vh) scale(1.1)}100%{transform:translateY(-75vh) translateX(var(--dx)) scale(1);opacity:0}}
+.modal{position:fixed;inset:0;z-index:70;background:rgba(10,7,30,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px}
+.modal .box{background:#221A55;border:1px solid var(--line);border-radius:26px;padding:24px;max-width:380px;width:100%;text-align:center;box-shadow:0 30px 60px rgba(0,0,0,.4)}
+.modal h3{font:600 19px var(--display);margin:0 0 8px}
+.modal p{color:var(--muted);margin:0 0 18px}
+.modal .row{display:grid;gap:8px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%}
+
+@media (max-width:380px){
+  .pair{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr 1fr}
+  .modes{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+  <header class="top">
+    <button class="brand" data-act="brand" aria-label="Aynı Frekans ana ekran">
+      <svg viewBox="0 0 34 20" aria-hidden="true"><path d="M1 10c4-9 6-9 8 0s4 9 8 0 4-9 8 0 4 9 8 0" fill="none" stroke="#4FD1FF" stroke-width="2.6" stroke-linecap="round"/><path d="M1 10c4 9 6 9 8 0s4-9 8 0 4 9 8 0 4-9 8 0" fill="none" stroke="#FF6F91" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg>
+      <span>Aynı Frekans</span>
+    </button>
+    <div class="top-r">
+      <button id="roomPill" class="pill hidden" data-act="copyCode" aria-label="Oda kodunu kopyala"></button>
+      <button id="soundBtn" class="icon-btn" data-act="sound" aria-label="Sesi aç veya kapat">🔊</button>
+    </div>
+  </header>
+  <div id="timebar" class="timebar" aria-hidden="true"><i></i></div>
+  <main id="screen" class="screen"></main>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="floaters" aria-hidden="true"></div>
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>window.Peer||document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>')</script>
+
+<script>
+'use strict';
+
+/* =========================================================
+   SORU HAVUZU
+   Satır biçimi:
+     "1 Soru"                    → açık uçlu (derinlik 1)
+     "2 Soru? | A / B / C"        → seçmeli
+     "3 Soru? | ~ az ~ çok"       → 0–10 ölçek
+     "@" ile başlayan satır       → sadece 2 kişilik oyunlarda
+   Derinlik: 1 = Isınma, 2 = Keşif, 3 = Final
+   ========================================================= */
+const PACKS = [
+  {id:'buz',      emoji:'🧊', name:'Buz Kırıcı'},
+  {id:'ikilem',   emoji:'⚡', name:'Bu mu Şu mu'},
+  {id:'zevk',     emoji:'🍿', name:'Zevkler'},
+  {id:'gecmis',   emoji:'🕰️', name:'Geçmiş'},
+  {id:'gelecek',  emoji:'🚀', name:'Hayaller'},
+  {id:'yaolsa',   emoji:'🎭', name:'Ya Olsaydı?'},
+  {id:'itiraf',   emoji:'🙈', name:'İtiraf Odası'},
+  {id:'derin',    emoji:'🌊', name:'Derin Sular'},
+  {id:'kivilcim', emoji:'🔥', name:'Kıvılcım'},
+];
+
+const RAW = {
+buz: `
+1 En sevdiğin yemek ne?
+1 Kahve mi çay mı? | Kahve / Çay
+1 Sabah insanı mısın, gece kuşu mu? | Sabah insanı / Gece kuşu
+1 En sevdiğin renk ne?
+1 En sevdiğin mevsim hangisi? | İlkbahar / Yaz / Sonbahar / Kış
+1 Telefonunda en çok vakit geçirdiğin uygulama hangisi?
+1 Ne kadar uykucusun? | ~ 5 saat bana yeter ~ Kış uykusuna yatarım
+1 Kedi mi köpek mi? | Kedi / Köpek / İkisi de / Hiçbiri
+1 Tatlı mı tuzlu mu? | Tatlı / Tuzlu
+1 Yağmurlu bir pazar gününü nasıl geçirirsin?
+1 En sevdiğin atıştırmalık ne?
+1 Telefonunun şarjı kaçın altına inince panik yaparsın? | %50 / %20 / %5 / Kapanınca fark ederim
+1 Duşta şarkı söyler misin? | Konser veririm / Mırıldanırım / Asla
+1 Yeni tanıştığın biriyle ne kadar konuşkansın? | ~ Sessiz gözlemci ~ Durdurulamam
+1 Seni en iyi anlatan emoji hangisi?
+1 Asla yemeyeceğin yemek ne?
+1 Ne kadar dakiksin? | ~ Hep geç kalırım ~ Hep erken gelirim
+1 En sevdiğin içecek ne?
+1 Bir çizgi film karakteri olsan hangisi olurdun?
+1 Hangi şehirde yaşamak isterdin?
+2 Bir gününü tamamen boş bıraksalar ne yaparsın?
+2 Ağzından en sık çıkan laf ne?
+2 Seni anında güldüren şey ne?
+2 Arkadaş grubunda hangi rol sende? | Organizatör / Komedyen / Terapist / Hep geç kalan
+2 Karaokede hangi şarkıyı seçersin?
+2 Planlı mısın, spontane mi? | ~ Her şey planlı ~ Tamamen spontane
+2 Ne kadar dağınıksın? | ~ Her şey yerli yerinde ~ Kaos benim düzenim
+2 Tarayıcında genelde kaç sekme açık? | 1-5 / 6-20 / 20'den fazla / Saymaya korkuyorum
+2 Bir hafta tek bir kıyafetle yaşasan ne giyerdin?
+2 Hayatının film müziği hangi şarkı olurdu?
+2 Kendini üç kelimeyle anlat.
+2 Seni en hızlı sinir eden küçük şey ne?
+2 Sabah uyanınca ilk yaptığın şey ne?
+2 Gizli yeteneğin ne?
+@2 Karşındakini bir hayvana benzetsen hangisi olurdu?
+@2 Karşındakinin süper gücü ne olurdu?
+3 Seni yakından tanıyan biri seni nasıl tarif eder?
+3 Kendinde en çok sevdiğin özellik ne?
+3 İnsanların senin hakkında yanlış anladığı şey ne?
+`,
+ikilem: `
+1 Deniz mi dağ mı? | Deniz / Dağ
+1 Film mi dizi mi? | Film / Dizi
+1 Pizza mı burger mi? | Pizza / Burger
+1 Yazılı mesaj mı sesli mesaj mı? | Yazılı mesaj / Sesli mesaj
+1 Erken kalkmak mı geç yatmak mı? | Erken kalkmak / Geç yatmak
+1 Kitap mı filmi mi? | Kitabı / Filmi
+1 Sıcak hava mı soğuk hava mı? | Sıcak / Soğuk
+1 Büyük şehir mi sakin kasaba mı? | Büyük şehir / Sakin kasaba
+1 Uçak mı tren mi? | Uçak / Tren
+1 Ev partisi mi kulüp mü? | Ev partisi / Kulüp
+1 Döner mi lahmacun mu? | Döner / Lahmacun
+1 Kahvaltı mı akşam yemeği mi? | Kahvaltı / Akşam yemeği
+1 Gün batımı mı gün doğumu mu? | Gün batımı / Gün doğumu
+1 Çikolata mı dondurma mı? | Çikolata / Dondurma
+1 Kamp mı otel mi? | Kamp / Otel
+1 iPhone mu Android mi? | iPhone / Android
+1 Baklava mı künefe mi? | Baklava / Künefe
+1 Kulaklık mı hoparlör mü? | Kulaklık / Hoparlör
+2 Geçmişe mi gitmek, geleceğe mi? | Geçmişe / Geleceğe
+2 Görünmezlik mi uçabilmek mi? | Görünmezlik / Uçabilmek
+2 Zengin ama sıkıcı bir hayat mı, fakir ama maceralı mı? | Zengin ve sıkıcı / Fakir ve maceralı
+2 Ünlü olmak mı, gizlice çok zengin olmak mı? | Ünlü olmak / Gizlice zengin
+2 Bir yıl internetsiz mi, müziksiz mi? | İnternetsiz / Müziksiz
+2 Kalabalık bir doğum günü mü, iki kişilik bir yemek mi? | Kalabalık parti / İki kişilik yemek
+2 Kalp mi akıl mı? | Kalp / Akıl
+2 Hep 10 dakika geç mi, hep 20 dakika erken mi? | Hep geç / Hep erken
+2 Düşünceleri duymak mı, geleceği görmek mi? | Düşünceleri duymak / Geleceği görmek
+2 Bir yıl tatlısız mı, kahvesiz mi? | Tatlısız / Kahvesiz
+2 Plan mı sürpriz mi? | Plan / Sürpriz
+2 Tartışınca hemen konuşmak mı, soğumayı beklemek mi? | Hemen konuşurum / Soğumayı beklerim
+2 Yaz tatili mi kış tatili mi? | Yaz / Kış
+3 Haklı olmak mı mutlu olmak mı? | Haklı olmak / Mutlu olmak
+3 Az ama derin dostluk mu, çok ama yüzeysel arkadaşlık mı? | Az ve derin / Çok ve yüzeysel
+3 Tutku mu huzur mu? | Tutku / Huzur
+3 Acı gerçek mi tatlı yalan mı? | Acı gerçek / Tatlı yalan
+3 Sevmek mi sevilmek mi? | Sevmek / Sevilmek
+3 Geçmişi unutmak mı, geleceği bilmek mi? | Geçmişi unutmak / Geleceği bilmek
+3 Özgürlük mü güven mi? | Özgürlük / Güven
+`,
+zevk: `
+1 En sevdiğin film türü hangisi? | Komedi / Korku / Bilim kurgu / Dram / Aksiyon
+1 En sevdiğin müzik türü ne?
+1 Son zamanlarda dilinden düşmeyen şarkı hangisi?
+1 Sence dünyanın en abartılan yemeği ne?
+1 Tekrar tekrar izleyebileceğin film ya da dizi hangisi?
+1 Kahveni nasıl içersin? | Sade / Sütlü / Şekerli / Kahve içmem
+1 Pizzaya ananas? | Kesinlikle / Asla / Hiç denemedim
+1 Ne kadar acı yiyebilirsin? | ~ Karabiber bile acı ~ Ateş püskürürüm
+1 En sevdiğin dondurma aroması ne?
+1 Ne kadar spor yaparsın? | ~ Kanepe şampiyonu ~ Her gün antrenman
+1 Yemek yapmayı ne kadar seversin? | ~ Su bile kaynatamam ~ Mutfağın şefiyim
+1 Boş zamanında en çok ne yaparsın?
+2 Menüye bakmadan sipariş edeceğin yemek ne?
+2 Gizlice sevdiğin, biraz utandığın bir şarkı?
+2 Seni ağlatan bir film ya da dizi?
+2 Hangi ünlüyle bir gün geçirmek isterdin?
+2 Alışveriş tarzın nasıl? | Plan yapıp alırım / Anlık hevesle / Sepette unuturum / Nefret ederim
+2 En sevdiğin koku ne?
+2 Ne kadar kitap okursun? | ~ Hiç ~ Kitap kurdu
+2 Sabah hazırlanman ne kadar sürer? | 5 dakika / 15 dakika / 30 dakika / 1 saatten fazla
+2 Hafta sonu ideal uyanma saatin kaç?
+2 Bir şarkıyı kaç kez üst üste dinleyebilirsin? | 1-2 / 5-10 / 50'den fazla / Sonsuz döngü
+2 Hangi markaya aşırı sadıksın?
+2 Gece yarısı atıştırmalığın ne?
+2 Bir dizi maratonuna ne kadar dayanırsın? | ~ Bir bölüm ~ Bütün sezon tek gecede
+2 Ne kadar rekabetçisin? | ~ Kaybetmek umurumda değil ~ Monopoly'de dostluk biter
+2 Fotoğraf mı çekersin, anı mı yaşarsın? | Her şeyi çekerim / Anı yaşarım / Arada bir
+3 Kötü bir günde seni ne iyileştirir?
+3 Hangi sanatçının konserine gitmek için her şeyi yaparsın?
+3 Seni hep aynı anıya götüren şarkı hangisi?
+3 Hayata bakışını değiştiren bir kitap ya da film?
+3 Kendine en son aldığın gereksiz ama mutlu eden şey ne?
+`,
+gecmis: `
+1 Çocukken ne olmak istiyordun?
+1 Çocukluğunun en sevdiğin çizgi filmi hangisi?
+1 Okulda en sevdiğin ders hangisiydi? | Matematik / Edebiyat / Beden eğitimi / Resim / Teneffüs
+1 Çocukken en sevdiğin oyuncak neydi?
+1 Öğrenciyken nasıl biriydin? | ~ Arka sıranın efsanesi ~ Ön sıranın çalışkanı
+1 İlk telefonun hangi markaydı?
+1 Çocukken bir lakabın var mıydı?
+1 Çocukken en çok neden korkardın?
+1 Çocukken ne kadar konuşkandın? | ~ Sessiz bir çocuk ~ Susmak bilmezdim
+2 Çocukken yaptığın en büyük yaramazlık ne?
+2 Gittiğin ilk konser hangisiydi?
+2 Çocukken en sevdiğin yemek neydi?
+2 Liseden aklında kalan en komik an ne?
+2 İlk hoşlantın kaç yaşındaydı? | 6'dan önce / 7-11 / 12-15 / 16 ve sonrası
+2 Hiç okuldan kaçtın mı? | Defalarca / Bir kez / Asla
+2 Ailende en çok kime benziyorsun?
+2 Gittiğin en güzel tatil hangisiydi?
+2 Ergenliğinin en utanç verici modası neydi?
+2 Bir dönem takıntılı olduğun şey ne?
+2 Lise yıllarını ne kadar özlüyorsun? | ~ Hiç ~ Geri dönsem giderim
+2 Çocukken ne kadar uslu biriydin? | ~ Melek gibi ~ Baş belası
+3 Hayatının dönüm noktası neydi?
+3 Geri dönüp değiştirmek istediğin bir karar?
+3 En çok gurur duyduğun anın ne?
+3 Geçmişteki kendine bir cümle söylesen ne derdin?
+3 Hayatında en çok etkilendiğin kişi kim?
+3 En çok cesaret gerektiren anın neydi?
+3 Çocukken hayal ettiğin hayata ne kadar yakınsın? | ~ Bambaşka bir yerdeyim ~ Tam olarak orada
+3 Hiç unutmadığın bir iltifat?
+`,
+gelecek: `
+1 Hayalindeki tatil nereye?
+1 Piyangodan büyük ikramiye çıksa ilk ne alırsın?
+1 Bir yıl izin alsan ne yapardın?
+1 Hayalindeki ev nerede? | Deniz kenarı / Dağ evi / Şehir merkezi / Yurt dışı
+1 Yeni bir dil öğrenecek olsan hangisi olurdu?
+1 Hayalindeki araba ne?
+1 Emekli olunca ne yapmak istersin?
+1 Gelecek konusunda ne kadar iyimsersin? | ~ Kara bulutlar ~ Her şey güzel olacak
+2 Beş yıl sonra kendini nerede görüyorsun?
+2 Kendi işini kursan ne olurdu?
+2 Ölmeden önce mutlaka yapmak istediğin bir şey?
+2 Hangi ülkede yaşamak isterdin?
+2 Ne kadar risk alırsın? | ~ Garantici ~ Hepsi kırmızıya
+2 Ünlü olsan ne için ünlü olurdun?
+2 Öğrenmek istediğin bir beceri ne?
+2 Bir TED konuşması versen konusu ne olurdu?
+2 Yaşlanınca nasıl biri olacaksın? | Bilge büyük / Huysuz komşu / Maceracı yaşlı / Hâlâ genç ruhlu
+2 Kariyerinde hayalindeki durak ne?
+2 Bir gün yurt dışında yaşama ihtimalin ne? | ~ Asla ~ Bavulum hazır
+3 En büyük hayalin ne?
+3 Seni gerçekten mutlu edecek hayat nasıl görünür?
+3 On yıl sonra hâlâ yapıyor olmak istemediğin şey ne?
+3 Neyi başarırsan "tamam, oldu" dersin?
+3 Geleceğe dair en büyük endişen ne?
+3 Nasıl hatırlanmak isterdin?
+3 Çocuk ister misin? | Evet / Hayır / Belki / Henüz bilmiyorum
+3 Para sorun olmasa ne iş yapardın?
+3 Hayalindeki sıradan bir gün nasıl geçer?
+3 Şu anki hayatından ne kadar memnunsun? | ~ Hiç ~ Tam istediğim gibi
+3 Bir gün kitap yazsan adı ne olurdu?
+`,
+yaolsa: `
+1 Hangi süper gücü seçerdin? | Uçmak / Görünmezlik / Zihin okuma / Işınlanma / Zamanı durdurmak
+1 Bir hayvan olsan ne olurdun?
+1 Issız bir adaya tek bir eşya götürebilsen ne olurdu?
+1 Bir ay boyunca tek bir yemek yiyecek olsan hangisi?
+1 Zombi kıyametinde ne kadar dayanırsın? | İlk gün giderim / Bir hafta / Bir ay / Liderleri olurum
+1 Bir dizinin içinde yaşasan hangisi olurdu?
+1 Bir filmin kötü karakteri olsan adın ne olurdu?
+1 Bir müze açsan neyin müzesi olurdu?
+1 Bir gün bir ünlüyle yer değiştirsen kim olurdu?
+1 Bir dondurma çeşidi olsan adın ne olurdu?
+1 Uzaya gitmeye ne kadar hazırsın? | ~ Asla binmem ~ İlk bileti ben alırım
+2 Zaman makinen olsa hangi yıla giderdin?
+2 Hayatın bir film olsa türü ne olurdu? | Romantik komedi / Gerilim / Belgesel / Absürt komedi / Dram
+2 Hayatını bir oyuncu canlandırsa kim olurdu?
+2 Bir sabah bir milyon takipçiyle uyansan ilk ne paylaşırdın?
+2 Uzaylılar seni kaçırsa onlara ilk ne sorardın?
+2 Bir yeteneği anında öğrenebilsen hangisi olurdu?
+2 Kendi ülkeni kursan ilk yasan ne olurdu?
+2 Ömür boyu tek bir şarkı dinleyebilsen hangisi?
+2 Bir korku filminde ne zaman ölürsün? | İlk sahnede / Ortalarda / Sona doğru / Hayatta kalan benim
+2 Hangi tarihi kişiyle akşam yemeği yemek isterdin?
+2 Ölümsüzlük teklif edilse kabul eder misin? | Hemen / Düşünürüm / Asla
+2 Bir robot asistanın olsa adını ne koyardın?
+2 Ünlü olmayı ne kadar isterdin? | ~ Asla ~ Hemen şimdi
+3 Herkesin düşüncelerini bir gün boyunca duysan neyi öğrenmekten korkardın?
+3 Hayatının bir gününü tekrar yaşayabilsen hangisi olurdu?
+3 Geleceğini öğrenebilsen bakar mıydın? | Hemen bakarım / Sadece iyi kısımlara / Asla bakmam
+3 Tüm hafızanı tek bir kişiyle paylaşmak zorunda olsan kim olurdu?
+3 Para dışında tek bir dileğin olsa ne dilerdin?
+3 Yeniden doğsan neyi farklı yapardın?
+3 Kimsenin seni tanımadığı bir şehre taşınsan kim olurdun?
+`,
+itiraf: `
+1 Hâlâ izlediğin çocuksu bir şey var mı?
+1 Gizli zevkin olan "kötü" bir yemek?
+1 Alarm çalınca kaç kez ertelersin? | Hiç / 1-2 kez / Her sabah 5 kez / Alarmım benden umudu kesti
+1 Galerinin ne kadarı ekran görüntüsü? | ~ Hiç ~ Neredeyse hepsi
+1 Hiç yanlış kişiye mesaj attın mı? | Evet, felaketti / Evet ama kurtardım / Hayır
+1 Ne kadar dedikoducusun? | ~ Ağzım sıkıdır ~ Haber ajansı gibiyim
+1 Ne kadar kolay utanırsın? | ~ Utanmak nedir ~ Domates gibi kızarırım
+2 Ne kadar iyi yalan söylersin? | ~ Yüzüme yazılır ~ Oscar'lık oyunculuk
+2 En utanç verici anın ne?
+2 Söylediğin en saçma yalan ne?
+2 Hiç birini görmemek için saklandın mı? | Defalarca / Bir kez / Asla
+2 Yaptığın en saçma alışveriş ne?
+2 Hiç bilmediğin halde bilir gibi yaptığın konu ne?
+2 Birinin sosyal medyasını gizlice incelediğin oldu mu? | Elbette / Bir kere / Asla
+2 Duşta hayali röportaj verir misin? | Her gün / Bazen / Asla
+2 Hangi ünlüye gizli hayranlığın var?
+2 Aldığın en kötü hediye neydi?
+2 Hiç olmadık bir yerde uyuyakaldın mı? Nerede?
+2 Ayna karşısında konuşma provası yapar mısın? | Sürekli / Bazen / Asla
+2 İnsanların seninle ilgili ilk izlenimi genelde ne olur?
+2 Telefonuna ne kadar bağımlısın? | ~ Unuttuğum olur ~ Elimden düşmez
+3 Kimseye söylemediğin küçük bir sır?
+3 Verdiğin en kötü karar neydi?
+3 Gönderdiğine pişman olduğun bir mesaj?
+3 Birini yanlış anlayıp sonradan utandığın bir an?
+3 En çok gizlediğin alışkanlığın ne?
+3 En son ne zaman birini kıskandın?
+`,
+derin: `
+1 Seni en çok ne motive eder? | Başarı / İnsanlar / Merak / Para / Özgürlük
+1 Ne kadar duygusalsın? | ~ Taş kalpli ~ Reklamda bile ağlarım
+1 İçe dönük müsün, dışa dönük mü? | ~ İçe dönük ~ Dışa dönük
+2 En büyük korkun ne?
+2 Kendinde değiştirmek istediğin bir özellik?
+2 Bir insanda en çok neye değer verirsin? | Dürüstlük / Mizah / Zekâ / Sadakat / Nezaket
+2 Stresliyken ne yaparsın?
+2 Seni en çok ne yorar?
+2 Ne kadar kolay güvenirsin? | ~ Asla ~ Herkese
+2 Ne kadar inatçısın? | ~ Su gibi akarım ~ Katır gibiyim
+2 "Hayır" demekte ne kadar zorlanırsın? | ~ Hiç zorlanmam ~ İmkânsız
+2 Yalnız kalmayı ne kadar seversin? | ~ Hiç ~ Bayılırım
+2 Bir tartışmada ilk özür dileyen kim olur? | Hep ben / Bazen ben / Nadiren ben / Asla ben
+2 Seni ağlatan son şey neydi?
+2 Hayatta en çok neye minnettarsın?
+3 Kimsenin bilmediği bir korkun?
+3 Seni sen yapan bir anı?
+3 Kendini en çok ne zaman yalnız hissedersin?
+3 Hayatta öğrendiğin en zor ders ne?
+3 Kendinle ilgili kabullenmekte zorlandığın şey ne?
+3 Asla affetmeyeceğin şey ne?
+3 Sence hayatın anlamı ne?
+3 Hangisi seni daha çok korkutur? | Başarısızlık / Yalnızlık / Sıradanlık
+3 En son ne zaman gerçekten mutlu hissettin?
+3 Birinde fark ettiğinde hemen uzaklaştığın şey ne?
+3 Kendine karşı ne kadar acımasızsın? | ~ Hiç ~ Çok
+3 Geçmişe ne kadar takılırsın? | ~ Hiç ~ Sürekli düşünürüm
+3 Biri seni gerçekten tanımak istese neyi bilmeli?
+3 Kaybettiğin ama hâlâ özlediğin bir şey?
+3 En son ne zaman kendine "iyi ki" dedin?
+`,
+kivilcim: `
+1 Birinde ilk dikkatini çeken şey ne? | Gözler / Gülüş / Ses / Tarz / Enerji
+1 İdeal ilk buluşma hangisi? | Kahve / Akşam yemeği / Yürüyüş / Konser / Bir aktivite
+1 Mesajlara ne kadar hızlı dönersin? | ~ Günler sonra ~ Saniyesinde
+1 Mesajlaşırken ne kadar emoji kullanırsın? | ~ Hiç ~ Emojiyle konuşurum
+1 İlk adımı kim atmalı? | Ben atarım / Karşı taraf / Kim cesaretliyse
+1 İlk buluşmada hesap? | Davet eden öder / Yarı yarıya / Kim kaparsa / Sırayla
+1 Hangi iltifat seni daha çok mutlu eder? | Çok komiksin / Çok zekisin / Çok iyi görünüyorsun / Seninle zaman uçuyor
+1 Dans eder misin? | Pistin yıldızıyım / İkna edilirsem / Asla
+1 Buluşmada hangi film? | Romantik komedi / Aksiyon / Korku / Animasyon
+1 Ne kadar romantiksin? | ~ Buz gibi ~ Şiir yazarım
+1 Hoşlandığın birinin yanında ne olursun? | Susarım / Çok konuşurum / Saçmalarım / Rahatımdır
+1 İlk buluşma için en iyi mekan neresi?
+2 Sevgini en çok nasıl gösterirsin? | Güzel sözlerle / Dokunarak / Zaman ayırarak / Hediyeyle / Yardım ederek
+2 Seni anında etkileyen jest ne olur?
+2 Seni anında soğutan şey ne?
+2 Ne kadar kıskançsın? | ~ Hiç ~ Çok
+2 Biriyle ideal cumartesi gecesi? | Evde film / Dışarıda yemek / Konser / Spontane bir yolculuk
+2 İlk mesajı kim atar? | Hep ben / Bazen ben / Beklerim
+2 Bir ilişkide vazgeçilmezin ne?
+2 Hiç ilk görüşte âşık oldun mu? | Evet / Hayır / Az kalsın
+2 Biriyle tanışırken en sevdiğin sohbet konusu ne?
+2 Sürprizlere bayılır mısın? | Bayılırım / Duruma göre / Hiç sevmem
+2 Seni tanıyan biri flört tarzını nasıl anlatır?
+2 Hoşlandığını belli eder misin? | ~ Asla anlaşılmaz ~ Alnımda yazar
+2 Aldığın en tatlı iltifat neydi?
+2 Flört ederken ne kadar cesursun? | ~ Ürkek ~ Gözü kara
+2 Bir buluşmaya ne kadar geç kalırsın? | Erkenden oradayım / Tam vaktinde / 10 dakika / "Yoldayım" derim, evden çıkmamışımdır
+2 Unutulmaz bir buluşma nasıl olurdu?
+3 Birine âşık olduğunu nasıl anlarsın?
+3 Yaşadığın en romantik an neydi?
+3 Sence en çekici özelliğin ne?
+3 Bir ilişkide en çok neden korkarsın?
+3 "Seni seviyorum"u ilk kim söylemeli? | Ben / O / Kim önce hissederse / Söze gerek yok
+3 Ruh eşine ne kadar inanırsın? | ~ Masal ~ Kesinlikle var
+3 Film gibi romantik bir an hayal etsen nerede geçerdi?
+3 Uzak mesafe ilişki? | Olur / Kısa süreliğine olur / Asla
+3 Biriyle gerçekten uyumlu olduğunu ne gösterir?
+3 Birine ne kadar çabuk bağlanırsın? | ~ Çok yavaş ~ İlk buluşmada
+@1 Karşındakinde ilk fark ettiğin şey neydi?
+@2 Karşındakini tek bir emojiyle anlatsan hangisi olurdu?
+@2 Karşındakiyle bir yere kaçsan nereye giderdin?
+@2 Karşındakiyle bir gün geçirsen ne yapardınız?
+@3 Karşındakine hiç söylemediğin bir iltifat?
+@3 Karşındaki hakkında en çok merak ettiğin şey ne?
+@3 Sence karşındakiyle en büyük ortak noktanız ne?
+`
+};
+
+const QUESTIONS = [];
+for (const [pack, txt] of Object.entries(RAW)) {
+  txt.trim().split('\n').forEach((line, idx) => {
+    line = line.trim();
+    if (!line) return;
+    let duo = false;
+    if (line[0] === '@') { duo = true; line = line.slice(1); }
+    const depth = +line[0];
+    const rest = line.slice(2).trim();
+    const q = { id: pack + '-' + idx, pack, depth, duo, type: 'open', text: rest };
+    const bar = rest.indexOf(' | ');
+    if (bar > -1) {
+      q.text = rest.slice(0, bar).trim();
+      const spec = rest.slice(bar + 3).trim();
+      if (spec[0] === '~') {
+        const parts = spec.slice(1).split('~').map(s => s.trim());
+        q.type = 'scale'; q.lo = parts[0]; q.hi = parts[1];
+      } else {
+        q.type = 'choice'; q.opts = spec.split(' / ').map(s => s.trim());
+      }
+    }
+    QUESTIONS.push(q);
+  });
+}
+const PACK = Object.fromEntries(PACKS.map(p => [p.id, p]));
+
+/* =========================================================
+   OYUN AYARLARI
+   ========================================================= */
+const MODES = {
+  arkadas:  {emoji:'🎉', name:'Arkadaşlar',   desc:'Gülmelik, hafif, bol itiraflı.', packs:['buz','ikilem','zevk','gecmis','yaolsa','itiraf']},
+  tanisma:  {emoji:'👋', name:'Tanışma',      desc:'Yeni tanıştığın biriyle buzları erit.', packs:['buz','ikilem','zevk','gecmis','gelecek','derin']},
+  kivilcim: {emoji:'🔥', name:'Kıvılcım',     desc:'Arada elektrik varsa. Sorular tur tur ısınır.', packs:['buz','ikilem','zevk','yaolsa','derin','kivilcim'], boost:{kivilcim:3}},
+  derin:    {emoji:'🌊', name:'Derin sohbet', desc:'Uzun bir gece, gerçek cevaplar.', packs:['ikilem','gecmis','gelecek','derin'], boost:{derin:2}},
+};
+const LENGTHS = {
+  kisa:   {name:'Kısa',   per:3},
+  normal: {name:'Normal', per:4},
+  uzun:   {name:'Uzun',   per:6},
+};
+const TIMERS = {
+  yok:    {name:'Süresiz', sub:'Acele yok',     open:0,  choice:0,  scale:0,  est:1.6},
+  normal: {name:'Normal',  sub:'90 / 30 sn',     open:90, choice:30, scale:35, est:1.4},
+  hizli:  {name:'Hızlı',   sub:'50 / 15 sn',     open:50, choice:15, scale:20, est:0.9},
+};
+// Bir oyun her zaman 3 turdur: hafiften derine. Final turunda puanlar iki kat.
+const ROUNDS = [
+  {name:'Isınma', depth:1, desc:'Kolay sorularla başlıyoruz. Parmaklar ısınsın.', mix:{choice:.45, scale:.2, open:.35}},
+  {name:'Keşif',  depth:2, desc:'Sorular biraz daha kişisel.',                    mix:{choice:.3,  scale:.25, open:.45}},
+  {name:'Final',  depth:3, desc:'Derin sular. En zor tahminler burada.',          mix:{choice:.2,  scale:.2,  open:.6}},
+];
+const DEFAULT_SETTINGS = {mode:'arkadas', packs:MODES.arkadas.packs.slice(), length:'normal', timer:'normal', jokers:true, finalDouble:true};
+const COLORS  = ['#4FD1FF','#FF6F91','#FFD166','#7CF29A','#B794FF','#FF9F5A','#5EEAD4','#F9A8D4'];
+const AVATARS = ['🦊','🐼','🐸','🦄','🐙','🐯','🐨','🐧','🦁','🐵','🐰','🐻','🐲','👽','🤖','🌵','🍉','⚡'];
+const REACTS  = ['😂','😳','🔥','❤️','👏','🤯'];
+const TIERS = [
+  [0,  'Paralel evrenler', 'İki dalga hiç kesişmedi. Keşfedecek çok şey var demek.'],
+  [30, 'Parazitli hat',    'Sinyal var ama cızırtılı. Bir oyun daha?'],
+  [50, 'Sinyal geliyor',   'Birbirinizi okumaya başlamışsınız.'],
+  [70, 'Aynı dalga boyu',  'Burada ciddi bir uyum var.'],
+  [85, 'Telepati',         'Birbirinizin aklından geçeni biliyorsunuz.'],
+];
+const MAX_PLAYERS = 8;
+const PREFIX = 'aynifrekans-v2-';
+const PEER_OPTS = Object.assign({debug: 0}, window.AF_PEER_OPTS || {});
+
+/* =========================================================
+   YARDIMCILAR
+   ========================================================= */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rid = (n = 10) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('af_' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('af_' + k, JSON.stringify(v)); } catch {} },
+};
+const ss = {
+  get(k) { try { return sessionStorage.getItem('af_' + k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem('af_' + k, v); } catch {} },
+  del(k) { try { sessionStorage.removeItem('af_' + k); } catch {} },
+};
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function weighted(list, wf) {
+  const ws = list.map(wf); let t = ws.reduce((a, b) => a + b, 0) * Math.random();
+  for (let i = 0; i < list.length; i++) { t -= ws[i]; if (t <= 0) return list[i]; }
+  return list[list.length - 1];
+}
+const fmtCode = c => c ? c.slice(0, 3) + ' ' + c.slice(3) : '';
+// Türkçe iyelik eki: Ayşe'nin, Gökhan'ın, Umut'un, Özgür'ün
+function gen(name) {
+  const n = String(name).trim();
+  const low = n.toLocaleLowerCase('tr');
+  const V = 'aeıioöuü';
+  let last = null;
+  for (let i = low.length - 1; i >= 0; i--) if (V.includes(low[i])) { last = low[i]; break; }
+  const suf = last ? {a:'ın',ı:'ın',e:'in',i:'in',o:'un',u:'un',ö:'ün',ü:'ün'}[last] : 'in';
+  return n + "'" + (V.includes(low[low.length - 1]) ? 'n' : '') + suf;
+}
+function norm(s) {
+  return String(s ?? '').toLocaleLowerCase('tr').replace(/ı/g, 'i').normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+function hasAns(q, v) { return q.type === 'open' ? norm(v).length > 0 : (v !== null && v !== undefined && v !== '' && !Number.isNaN(+v)); }
+function sameAns(q, a, b) {
+  if (!hasAns(q, a) || !hasAns(q, b)) return false;
+  return q.type === 'open' ? norm(a) === norm(b) : +a === +b;
+}
+// null → kişinin puanlaması gerekiyor
+function autoBase(q, guess, ans) {
+  if (!hasAns(q, guess)) return 0;
+  if (q.type === 'choice') return +guess === +ans ? 2 : 0;
+  if (q.type === 'scale') { const d = Math.abs(guess - ans); return d <= 1 ? 2 : d === 2 ? 1 : 0; }
+  return norm(guess) === norm(ans) ? 2 : null;
+}
+function showVal(q, v) {
+  if (!hasAns(q, v)) return '';
+  if (q.type === 'choice') return q.opts[+v] ?? '';
+  if (q.type === 'scale') return v + '/10';
+  return String(v);
+}
+
+/* =========================================================
+   SES
+   ========================================================= */
+const Sound = {
+  ctx: null, on: store.get('sound', true),
+  unlock() {
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; } }
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+  },
+  tone(f, d = .12, type = 'sine', vol = .07, delay = 0) {
+    if (!this.on || !this.ctx || this.ctx.state !== 'running') return;
+    const t = this.ctx.currentTime + delay, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + d + .03);
+  },
+  play(n) {
+    const T = (...a) => this.tone(...a);
+    switch (n) {
+      case 'tap':    T(660, .05, 'triangle', .04); break;
+      case 'join':   T(523, .1); T(784, .16, 'sine', .07, .08); break;
+      case 'send':   T(880, .08, 'triangle', .06); T(1175, .12, 'triangle', .05, .06); break;
+      case 'reveal': [392, 494, 587].forEach((f, i) => T(f, .16, 'sine', .06, i * .07)); break;
+      case 'hit':    [523, 659, 784, 1047].forEach((f, i) => T(f, .18, 'triangle', .06, i * .06)); break;
+      case 'close':  T(587, .12, 'triangle', .06); T(698, .18, 'triangle', .06, .09); break;
+      case 'miss':   T(233, .22, 'sawtooth', .03); T(175, .3, 'sawtooth', .028, .1); break;
+      case 'tick':   T(1046, .03, 'square', .02); break;
+      case 'pop':    T(880, .06, 'sine', .05); break;
+      case 'win':    [523, 659, 784, 1047, 784, 1047].forEach((f, i) => T(f, .22, 'triangle', .07, i * .11)); break;
+    }
+  }
+};
+addEventListener('pointerdown', () => Sound.unlock(), {passive: true});
+addEventListener('keydown', () => Sound.unlock());
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+
+/* =========================================================
+   YEREL DURUM
+   ========================================================= */
+let role = null;              // 'host' | 'guest' | null
+let peer = null;
+let hostConn = null;          // misafir → oda sahibi bağlantısı
+const guestConns = new Map(); // oda sahibi: pid → {conn, seen, ping}
+let room = null;              // oda sahibindeki asıl durum
+let view = null;              // ekranda gösterilen (bana özel) durum
+let clockOffset = 0, hostSeen = 0, welcomed = false, leaving = false;
+let joinCode = '', retryTimer = null, retries = 0, joinTimer = null;
+let hostUsed = new Set();
+let myPid = ss.get('pid') || rid(); ss.set('pid', myPid);
+let myName = store.get('name', '');
+let myAvatar = store.get('avatar', AVATARS[Math.floor(Math.random() * AVATARS.length)]);
+let localScreen = 'home', connectMsg = '', homeError = '';
+let draft = {qid: null}, lastKey = '', autoSentFor = '', seenRes = new Set(), lastTick = -1, lastReact = 0;
+
+const params = new URLSearchParams(location.search);
+let inviteCode = ((params.get('oda') || params.get('kod') || location.hash || '').replace(/\D/g, '')).slice(0, 6);
+if (inviteCode.length !== 6) inviteCode = '';
+
+/* =========================================================
+   SORU SEÇİMİ
+   ========================================================= */
+function poolFor(settings, n) {
+  const packs = new Set(settings.packs);
+  return QUESTIONS.filter(q => packs.has(q.pack) && !(q.duo && n > 2));
+}
+function pickQ(pool, depth, type, taken, boost, packCount) {
+  const tiers = [
+    q => q.depth === depth && q.type === type,
+    q => Math.abs(q.depth - depth) === 1 && q.type === type,
+    q => q.depth === depth,
+    q => Math.abs(q.depth - depth) <= 1,
+    () => true,
+  ];
+  for (const f of tiers) {
+    const c = pool.filter(q => !taken.has(q.id) && f(q));
+    if (c.length) return weighted(c, q => (boost[q.pack] || 1) / (1 + (packCount[q.pack] || 0) * .6));
+  }
+  return null;
+}
+function typeSlots(mix, n) {
+  const keys = Object.keys(mix);
+  const raw = keys.map(k => mix[k] * n);
+  const cnt = raw.map(Math.floor);
+  let left = n - cnt.reduce((a, b) => a + b, 0);
+  raw.map((v, i) => [v - cnt[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { cnt[i]++; left--; } });
+  const out = [];
+  keys.forEach((k, i) => { for (let j = 0; j < cnt[i]; j++) out.push(k); });
+  shuffle(out);
+  // aynı türden üç soru üst üste gelmesin
+  for (let i = 2; i < out.length; i++) {
+    if (out[i] === out[i - 1] && out[i] === out[i - 2]) {
+      const j = out.findIndex((t, x) => x > i && t !== out[i]);
+      if (j > -1) [out[i], out[j]] = [out[j], out[i]];
+    }
+  }
+  return out;
+}
+function buildRounds(settings, n, used) {
+  const pool = poolFor(settings, n);
+  const boost = (MODES[settings.mode] || {}).boost || {};
+  const per = LENGTHS[settings.length].per;
+  const taken = new Set(used), packCount = {};
+  return ROUNDS.map(R => {
+    const qs = [];
+    for (const type of typeSlots(R.mix, per)) {
+      const q = pickQ(pool, R.depth, type, taken, boost, packCount);
+      if (q) { qs.push(q); taken.add(q.id); packCount[q.pack] = (packCount[q.pack] || 0) + 1; }
+    }
+    return {name: R.name, depth: R.depth, qs};
+  });
+}
+
+/* =========================================================
+   ODA SAHİBİ (HOST) MANTIĞI — tüm kurallar burada işler
+   ========================================================= */
+function mkPlayer(id, name, avatar) {
+  const usedC = new Set(room ? room.players.map(p => p.color) : []);
+  const color = COLORS.find(c => !usedC.has(c)) || COLORS[Math.floor(Math.random() * COLORS.length)];
+  return {id, name, avatar: AVATARS.includes(avatar) ? avatar : AVATARS[0], color, connected: true, score: 0,
+          st: {base: 0, max: 0, hit: 0, close: 0, match: 0}, jokers: {swap: 1, x2: 1}};
+}
+const PL = id => room.players.find(p => p.id === id);
+const cleanName = s => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 16);
+function uniqueName(n) {
+  let name = n, i = 2;
+  while (room.players.some(p => p.name.toLocaleLowerCase('tr') === name.toLocaleLowerCase('tr'))) name = n.slice(0, 13) + ' ' + i++;
+  return name;
+}
+function sanitizeSettings(s) {
+  const o = Object.assign({}, DEFAULT_SETTINGS);
+  if (!s || typeof s !== 'object') return o;
+  if (MODES[s.mode] || s.mode === 'ozel') o.mode = s.mode;
+  if (Array.isArray(s.packs)) o.packs = PACKS.map(p => p.id).filter(id => s.packs.includes(id));
+  if (LENGTHS[s.length]) o.length = s.length;
+  if (TIMERS[s.timer]) o.timer = s.timer;
+  o.jokers = s.jokers !== false;
+  o.finalDouble = s.finalDouble !== false;
+  return o;
+}
+function newRoom(code) {
+  room = {code, hostId: myPid, phase: 'lobby', players: [], settings: sanitizeSettings(store.get('settings')), g: null, ready: {}, history: []};
+  room.players.push(mkPlayer(myPid, myName, myAvatar));
+}
+const g_ = () => room.g;
+const activeIds = () => room.g.order.filter(id => PL(id) && PL(id).connected);
+
+function startGame() {
+  room.players = room.players.filter(p => p.connected);
+  const n = room.players.length, S = room.settings;
+  const need = LENGTHS[S.length].per * 3;
+  let rounds = buildRounds(S, n, hostUsed);
+  if (rounds.reduce((a, R) => a + R.qs.length, 0) < need) { hostUsed = new Set(); rounds = buildRounds(S, n, hostUsed); }
+  rounds = rounds.filter(R => R.qs.length);
+  rounds.forEach(R => R.qs.forEach(q => hostUsed.add(q.id)));
+  room.players.forEach(p => {
+    p.score = 0; p.st = {base: 0, max: 0, hit: 0, close: 0, match: 0};
+    p.jokers = {swap: S.jokers ? 1 : 0, x2: S.jokers ? 1 : 0};
+  });
+  room.history = [];
+  room.g = {rounds, r: 0, qi: 0, num: 0, total: rounds.reduce((a, R) => a + R.qs.length, 0),
+            order: room.players.map(p => p.id), targets: {}, subs: {}, cards: null, q: null,
+            endsAt: null, dur: 0, introEnds: 0, finalMult: 1, matchTotal: 0, roundName: ''};
+  toIntro();
+}
+function toIntro() {
+  const g = g_();
+  room.phase = 'intro'; room.ready = {};
+  g.introEnds = Date.now() + 3600;
+  const isLast = g.r === g.rounds.length - 1 && g.rounds.length > 1;
+  g.finalMult = isLast && room.settings.finalDouble ? 2 : 1;
+  g.roundName = g.rounds[g.r].name;
+}
+function startQuestion() {
+  const g = g_();
+  g.q = g.rounds[g.r].qs[g.qi];
+  g.num = g.rounds.slice(0, g.r).reduce((a, R) => a + R.qs.length, 0) + g.qi + 1;
+  const n = g.order.length, k = n > 1 ? 1 + ((g.num - 1) % (n - 1)) : 0;
+  g.targets = {};
+  g.order.forEach((id, i) => { g.targets[id] = g.order[(i + k) % n]; });
+  g.subs = {}; g.cards = null; room.ready = {};
+  setTimer();
+  room.phase = 'answer';
+}
+function setTimer() {
+  const g = g_(), secs = TIMERS[room.settings.timer][g.q.type] || 0;
+  g.dur = secs; g.endsAt = secs ? Date.now() + secs * 1000 : null;
+}
+function checkAnswers() {
+  const ids = activeIds();
+  if (ids.length && ids.every(id => room.g.subs[id])) toReveal();
+}
+function resolveCard(c, base, how) {
+  const p = PL(c.g);
+  c.base = base; c.how = how; c.mult = (c.x2 ? 2 : 1) * room.g.finalMult; c.pts = base * c.mult; c.state = 'done';
+  if (p) {
+    p.score += c.pts; p.st.base += base; if (how !== 'skip') p.st.max += 2;
+    if (base === 2) p.st.hit++; else if (base === 1) p.st.close++;
+  }
+}
+function toReveal() {
+  const g = g_(), q = g.q, pairs = new Set();
+  g.cards = g.order.map(gid => {
+    const tid = g.targets[gid], sg = g.subs[gid] || {}, st = g.subs[tid] || {};
+    const c = {g: gid, t: tid, guess: sg.guess ?? null, ans: st.mine ?? null, gMine: sg.mine ?? null,
+               x2: false, base: null, pts: 0, mult: 1, state: 'pending', how: null, match: false};
+    const gp = PL(gid);
+    if (sg.x2 && gp && gp.jokers.x2 > 0) { gp.jokers.x2--; c.x2 = true; }
+    if (!hasAns(q, c.ans)) c.state = 'na';
+    else { const b = autoBase(q, c.guess, c.ans); if (b !== null) resolveCard(c, b, 'auto'); }
+    if (sameAns(q, c.gMine, c.ans)) {
+      c.match = true;
+      const key = [gid, tid].sort().join('|');
+      if (!pairs.has(key)) { pairs.add(key); g.matchTotal++; [gid, tid].forEach(id => { const p = PL(id); if (p) p.st.match++; }); }
+    }
+    return c;
+  });
+  g.endsAt = null; room.phase = 'reveal'; room.ready = {};
+}
+const allResolved = () => room.g.cards.every(c => c.state !== 'pending');
+function nextStep() {
+  const g = g_();
+  room.history.push({num: g.num, q: g.q, cards: g.cards, mult: g.finalMult});
+  g.qi++;
+  if (g.qi >= g.rounds[g.r].qs.length) {
+    g.qi = 0; g.r++;
+    room.ready = {};
+    if (g.r >= g.rounds.length) { room.phase = 'final'; return; }
+    room.phase = 'roundEnd'; return;
+  }
+  startQuestion();
+}
+function checkReady() {
+  if (!['reveal', 'roundEnd'].includes(room.phase)) return;
+  if (room.phase === 'reveal' && !allResolved()) return;
+  const ids = activeIds();
+  if (ids.length && ids.every(id => room.ready[id])) room.phase === 'reveal' ? nextStep() : toIntro();
+}
+
+function hostAction(pid, m) {
+  if (!room) return;
+  const p = PL(pid); if (!p) return;
+  const g = room.g, isH = pid === room.hostId;
+  switch (m.a) {
+    case 'settings':
+      if (!isH || room.phase !== 'lobby') return;
+      room.settings = sanitizeSettings(m.settings); store.set('settings', room.settings); break;
+    case 'profile':
+      if (room.phase !== 'lobby') return;
+      if (AVATARS.includes(m.avatar)) p.avatar = m.avatar; break;
+    case 'start':
+      if (!isH || room.phase !== 'lobby') return;
+      if (room.players.filter(x => x.connected).length < 2 || !room.settings.packs.length) return;
+      startGame(); break;
+    case 'submit': {
+      if (room.phase !== 'answer' || !g.order.includes(pid)) return;
+      const q = g.q, clean = v => {
+        if (q.type === 'open') return String(v ?? '').slice(0, 80);
+        const n = parseInt(v, 10);
+        if (Number.isNaN(n)) return null;
+        return q.type === 'choice' ? (n >= 0 && n < q.opts.length ? n : null) : Math.max(0, Math.min(10, n));
+      };
+      g.subs[pid] = {mine: clean(m.mine), guess: clean(m.guess), x2: !!m.x2 && p.jokers.x2 > 0};
+      checkAnswers(); break;
+    }
+    case 'unsubmit':
+      if (room.phase !== 'answer') return;
+      delete g.subs[pid]; break;
+    case 'swap': {
+      if (room.phase !== 'answer' || !room.settings.jokers || p.jokers.swap < 1) return;
+      const S = room.settings;
+      const nq = pickQ(poolFor(S, g.order.length), g.q.depth, g.q.type, new Set([...hostUsed, g.q.id]), (MODES[S.mode] || {}).boost || {}, {});
+      if (!nq) { sendToast(pid, 'Değiştirecek soru kalmadı.'); return; }
+      hostUsed.add(nq.id); p.jokers.swap--;
+      g.rounds[g.r].qs[g.qi] = nq; g.q = nq; g.subs = {}; setTimer();
+      toastAll(`🔄 ${p.name} soruyu değiştirdi`);
+      break;
+    }
+    case 'judge': {
+      if (room.phase !== 'reveal') return;
+      const v = +m.v; if (![0, 1, 2].includes(v)) return;
+      const c = g.cards.find(c => c.t === pid && c.state === 'pending');
+      if (c) resolveCard(c, v, 'judge');
+      break;
+    }
+    case 'ready':
+      if (room.phase === 'reveal' && !allResolved()) return;
+      room.ready[pid] = true; checkReady(); break;
+    case 'force':
+      if (!isH) return;
+      if (room.phase === 'answer') toReveal();
+      else if (room.phase === 'reveal') { g.cards.forEach(c => { if (c.state === 'pending') resolveCard(c, 0, 'skip'); }); nextStep(); }
+      else if (room.phase === 'roundEnd') toIntro();
+      break;
+    case 'rematch':
+      if (!isH || room.phase !== 'final') return;
+      room.players = room.players.filter(x => x.connected);
+      room.players.forEach(x => { x.score = 0; });
+      room.g = null; room.history = []; room.ready = {}; room.phase = 'lobby';
+      break;
+    default: return;
+  }
+  emit();
+}
+
+function publicState(pid) {
+  const s = Object.assign({}, room, {
+    players: room.players.map(p => Object.assign({}, p)),
+    history: room.phase === 'final' ? room.history : [],
+  });
+  if (room.g) {
+    const g = room.g;
+    s.g = Object.assign({}, g, {rounds: g.rounds.map(R => ({name: R.name, n: R.qs.length})), subs: {}});
+    for (const [k, v] of Object.entries(g.subs)) s.g.subs[k] = (k === pid || room.phase !== 'answer') ? v : {done: true};
+  }
+  return s;
+}
+function emit() {
+  if (role !== 'host' || !room) return;
+  const now = Date.now();
+  for (const [pid, gc] of guestConns) sendTo(gc.conn, {t: 'state', s: publicState(pid), now});
+  onState(publicState(myPid), now);
+}
+function sendTo(conn, obj) { if (conn && conn.open) { try { conn.send(JSON.stringify(obj)); } catch {} } }
+function sendToast(pid, msg) { if (pid === myPid) toast(msg); else { const gc = guestConns.get(pid); gc && sendTo(gc.conn, {t: 'toast', msg}); } }
+function toastAll(msg) { for (const [, gc] of guestConns) sendTo(gc.conn, {t: 'toast', msg}); toast(msg); }
+function broadcastReact(e) {
+  if (!REACTS.includes(e)) return;
+  for (const [, gc] of guestConns) sendTo(gc.conn, {t: 'react', e});
+  floatEmoji(e);
+}
+
+// Oda sahibinin saati: zamanlayıcılar ve bağlantı kontrolü
+setInterval(() => {
+  if (role !== 'host' || !room) return;
+  const now = Date.now();
+  if (room.phase === 'intro' && now >= room.g.introEnds) { startQuestion(); emit(); }
+  else if (room.phase === 'answer' && room.g.endsAt && now > room.g.endsAt + 2500) { toReveal(); emit(); }
+  for (const [pid, gc] of guestConns) {
+    if (now - gc.ping > 2000) { gc.ping = now; sendTo(gc.conn, {t: 'ping'}); }
+    if (now - gc.seen > 10000) { try { gc.conn.close(); } catch {} dropGuest(pid, gc.conn); }
+  }
+}, 400);
+
+/* =========================================================
+   AĞ: ODA KURMA (HOST)
+   ========================================================= */
+function createRoom(attempt = 0) {
+  if (!window.Peer) return fail('Bağlantı bileşeni yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.');
+  role = 'host'; welcomed = true;
+  setLocal('connecting', 'Oda kuruluyor…');
+  const code = String(100000 + Math.floor(Math.random() * 900000));
+  const p = new Peer(PREFIX + code, PEER_OPTS);
+  peer = p;
+  let opened = false;
+  const to = setTimeout(() => { if (!opened) { safeDestroy(p); fail('Eşleştirme sunucusuna ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.'); } }, 15000);
+  p.on('open', () => {
+    opened = true; clearTimeout(to);
+    if (peer !== p) return;
+    newRoom(code);
+    emit();
+  });
+  p.on('connection', onGuestConn);
+  p.on('disconnected', () => { if (!p.destroyed && peer === p) setTimeout(() => { try { if (!p.destroyed) p.reconnect(); } catch {} }, 1200); });
+  p.on('error', err => {
+    if (opened) { console.warn('peer', err.type); return; }
+    clearTimeout(to); safeDestroy(p);
+    if (err.type === 'unavailable-id' && attempt < 6) return createRoom(attempt + 1);
+    fail(errText(err.type));
+  });
+}
+function onGuestConn(conn) {
+  conn.on('data', raw => {
+    let m; try { m = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return; }
+    if (!m || typeof m !== 'object') return;
+    hostOnMsg(conn, m);
+  });
+  conn.on('close', () => dropGuest(conn._pid, conn));
+  conn.on('error', () => dropGuest(conn._pid, conn));
+}
+function hostOnMsg(conn, m) {
+  if (!room) return;
+  if (m.t === 'hello') {
+    const pid = String(m.pid || '').slice(0, 24);
+    if (!pid || pid === myPid) return reject(conn, 'dup');
+    let p = PL(pid);
+    if (p) {
+      const old = guestConns.get(pid);
+      if (old && old.conn !== conn) { old.conn._pid = null; try { old.conn.close(); } catch {} }
+      if (!p.connected) toastAll(`${p.name} geri döndü`);
+      p.connected = true;
+    } else {
+      if (room.phase !== 'lobby') return reject(conn, 'started');
+      if (room.players.length >= MAX_PLAYERS) return reject(conn, 'full');
+      p = mkPlayer(pid, uniqueName(cleanName(m.name) || 'Oyuncu'), m.avatar);
+      room.players.push(p);
+    }
+    conn._pid = pid;
+    guestConns.set(pid, {conn, seen: Date.now(), ping: Date.now()});
+    sendTo(conn, {t: 'welcome', pid});
+    emit();
+    return;
+  }
+  const pid = conn._pid; if (!pid) return;
+  const gc = guestConns.get(pid);
+  if (!gc || gc.conn !== conn) return;
+  gc.seen = Date.now();
+  if (m.t === 'act') hostAction(pid, m);
+  else if (m.t === 'react' && Date.now() - (gc.react || 0) > 300) { gc.react = Date.now(); broadcastReact(m.e); }
+}
+function reject(conn, reason) {
+  sendTo(conn, {t: 'reject', reason});
+  setTimeout(() => { try { conn.close(); } catch {} }, 400);
+}
+function dropGuest(pid, conn) {
+  if (!pid || !room) return;
+  const gc = guestConns.get(pid);
+  if (!gc || gc.conn !== conn) return;
+  guestConns.delete(pid);
+  const p = PL(pid); if (!p) return;
+  if (room.phase === 'lobby') {
+    room.players = room.players.filter(x => x.id !== pid);
+  } else {
+    p.connected = false;
+    toastAll(`${p.name} bağlantısı koptu`);
+    if (room.phase === 'answer') checkAnswers();
+    else checkReady();
+  }
+  emit();
+}
+
+/* =========================================================
+   AĞ: ODAYA KATILMA (MİSAFİR)
+   ========================================================= */
+function joinRoom(code) {
+  if (!window.Peer) return fail('Bağlantı bileşeni yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.');
+  role = 'guest'; joinCode = code; welcomed = false; retries = 0;
+  setLocal('connecting', `${fmtCode(code)} odasına bağlanılıyor…`);
+  try { history.replaceState(null, '', location.pathname + '?oda=' + code); } catch {}
+  connectGuest(false);
+}
+function connectGuest(isRetry) {
+  clearTimeout(joinTimer);
+  if (hostConn) { const c = hostConn; hostConn = null; try { c.close(); } catch {} }
+  joinTimer = setTimeout(() => onJoinFail('timeout', isRetry), 16000);
+  const start = () => {
+    if (role !== 'guest') return;
+    const c = peer.connect(PREFIX + joinCode, {reliable: true});
+    hostConn = c;
+    c.on('open', () => {
+      if (hostConn !== c) return;
+      clearTimeout(joinTimer); hostSeen = Date.now();
+      sendTo(c, {t: 'hello', pid: myPid, name: myName, avatar: myAvatar});
+    });
+    c.on('data', raw => {
+      if (hostConn !== c) return;
+      let m; try { m = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return; }
+      hostSeen = Date.now();
+      guestOnMsg(m);
+    });
+    c.on('close', () => { if (hostConn === c) onHostLost(); });
+    c.on('error', () => { if (hostConn === c) onHostLost(); });
+  };
+  if (peer && !peer.destroyed && peer.open) return start();
+  safeDestroy(peer);
+  const p = new Peer(PEER_OPTS);
+  peer = p;
+  p.on('open', () => { if (peer === p) start(); });
+  p.on('disconnected', () => { if (!p.destroyed && peer === p) setTimeout(() => { try { if (!p.destroyed) p.reconnect(); } catch {} }, 1200); });
+  p.on('error', err => {
+    if (peer !== p) return;
+    if (err.type === 'peer-unavailable') onJoinFail('nohost', isRetry);
+    else if (['network', 'server-error', 'socket-error', 'socket-closed', 'browser-incompatible', 'unavailable-id'].includes(err.type)) {
+      if (!welcomed || isRetry) onJoinFail(err.type, isRetry);
+    }
+  });
+}
+function guestOnMsg(m) {
+  switch (m.t) {
+    case 'welcome':
+      welcomed = true; retries = 0; clearTimeout(retryTimer); retryTimer = null; hideModal();
+      ss.set('joined', joinCode); inviteCode = joinCode;
+      break;
+    case 'state': onState(m.s, m.now); break;
+    case 'toast': toast(m.msg); break;
+    case 'react': floatEmoji(m.e); break;
+    case 'reject':
+      fail({full: 'Oda dolu. En fazla 8 kişi oynayabilir.',
+            started: 'Bu odada oyun başlamış. Oda sahibi yeni oyuna geçince tekrar katılabilirsin.',
+            dup: 'Bu odaya aynı sekmeden zaten bağlısın.'}[m.reason] || 'Odaya katılamadın.');
+      break;
+    case 'closed': fail('Oda sahibi odayı kapattı.'); break;
+  }
+}
+function onJoinFail(kind, isRetry) {
+  clearTimeout(joinTimer);
+  if (role !== 'guest' || leaving) return;
+  if (welcomed || isRetry) return scheduleRetry();
+  fail(errText(kind));
+}
+function onHostLost() {
+  if (role !== 'guest' || leaving) return;
+  if (!welcomed) return onJoinFail('timeout', false);
+  scheduleRetry();
+}
+function scheduleRetry() {
+  clearTimeout(retryTimer);
+  if (role !== 'guest' || leaving) return;
+  retries++;
+  if (retries > 20) {
+    showModal(`<h3>Bağlantı kurulamadı</h3><p>Oda sahibine ulaşılamıyor. Sayfası kapanmış ya da interneti kesilmiş olabilir.</p>
+      <div class="row"><button class="btn primary" data-act="retryNow">Tekrar dene</button><button class="btn ghost" data-act="leaveNow">Ana ekrana dön</button></div>`);
+    return;
+  }
+  showModal(`<svg class="spinner" viewBox="0 0 64 64"><path class="wa" d="M4 32c7-16 11-16 14 0s7 16 14 0 7-16 14 0 7 16 14 0"/><path class="wb" d="M4 32c7 16 11 16 14 0s7-16 14 0 7 16 14 0 7-16 14 0"/></svg>
+    <h3>Bağlantı koptu</h3><p>Yeniden bağlanılıyor… Cevapların kaybolmaz.</p>
+    <div class="row"><button class="btn ghost" data-act="leaveNow">Odadan çık</button></div>`);
+  retryTimer = setTimeout(() => { retryTimer = null; connectGuest(true); }, retries === 1 ? 600 : 3000);
+}
+// misafir nabzı
+setInterval(() => {
+  if (role !== 'guest' || !welcomed || !hostConn) return;
+  if (!hostConn.open) return;
+  sendTo(hostConn, {t: 'ping'});
+  if (Date.now() - hostSeen > 10000 && !retryTimer) { const c = hostConn; hostConn = null; try { c.close(); } catch {} onHostLost(); }
+}, 2000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && role === 'guest' && welcomed && (!hostConn || !hostConn.open)) { retries = 0; connectGuest(true); }
+});
+
+function errText(kind) {
+  return ({
+    nohost: 'Bu kodla açık bir oda bulunamadı. Kodu kontrol et ve oda sahibinin sayfasının açık olduğundan emin ol.',
+    timeout: 'Odaya bağlanılamadı. Ağın doğrudan bağlantıya izin vermiyor olabilir; Wi-Fi yerine mobil veriyle dene.',
+    network: 'Eşleştirme sunucusuna ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.',
+    'server-error': 'Eşleştirme sunucusu şu an yanıt vermiyor. Biraz sonra tekrar dene.',
+    'socket-error': 'Eşleştirme sunucusuyla bağlantı koptu. Tekrar dene.',
+    'socket-closed': 'Eşleştirme sunucusuyla bağlantı koptu. Tekrar dene.',
+    'browser-incompatible': 'Bu tarayıcı doğrudan bağlantıyı desteklemiyor. Chrome, Safari ya da Firefox ile dene.',
+  })[kind] || 'Bağlantı kurulamadı. Tekrar dene.';
+}
+function safeDestroy(p) { if (p && !p.destroyed) { try { p.destroy(); } catch {} } }
+function resetConn() {
+  leaving = true;
+  clearTimeout(retryTimer); clearTimeout(joinTimer); retryTimer = null;
+  if (role === 'host') for (const [, gc] of guestConns) sendTo(gc.conn, {t: 'closed'});
+  const p = peer, hc = hostConn;
+  hostConn = null; peer = null;
+  setTimeout(() => { try { hc && hc.close(); } catch {} safeDestroy(p); }, 200);
+  guestConns.clear();
+  role = null; room = null; view = null; welcomed = false;
+  ss.del('joined');
+  try { history.replaceState(null, '', location.pathname); } catch {}
+  hideModal(); updateChrome();
+  setTimeout(() => { leaving = false; }, 400);
+}
+function fail(msg) { resetConn(); homeError = msg; inviteCode = ''; setLocal('home'); }
+function leaveRoom() { resetConn(); homeError = ''; inviteCode = ''; setLocal('home'); }
+
+addEventListener('beforeunload', e => {
+  if (role === 'host' && room && room.players.length > 1) { e.preventDefault(); e.returnValue = ''; }
+});
+addEventListener('pagehide', () => {
+  if (role === 'host') for (const [, gc] of guestConns) sendTo(gc.conn, {t: 'closed'});
+});
+
+/* =========================================================
+   EYLEMLER (arayüzden)
+   ========================================================= */
+function act(a, data = {}) {
+  const m = Object.assign({a}, data);
+  if (role === 'host') hostAction(myPid, m);
+  else if (role === 'guest' && hostConn && hostConn.open) sendTo(hostConn, Object.assign({t: 'act'}, m));
+  else toast('Bağlantı bekleniyor…');
+}
+function sendReact(e) {
+  if (Date.now() - lastReact < 350) return;
+  lastReact = Date.now();
+  if (role === 'host') broadcastReact(e);
+  else if (hostConn && hostConn.open) sendTo(hostConn, {t: 'react', e});
+}
+
+/* =========================================================
+   DURUM → EKRAN
+   ========================================================= */
+const VP  = id => view.players.find(p => p.id === id);
+const isHost = () => role === 'host';
+function av(p, size = '') { return p ? `<span class="av ${size}" style="--c:${p.color}">${esc(p.avatar)}</span>` : ''; }
+const youOr = (p, own, other) => p.id === myPid ? own : other;
+
+function onState(s, now) {
+  const prev = view;
+  view = s;
+  clockOffset = role === 'host' ? 0 : Date.now() - now;
+  effects(prev, s);
+  render();
+}
+function effects(prev, s) {
+  if (!prev) { Sound.play('join'); return; }
+  if (s.phase === 'lobby' && prev.phase === 'lobby' && s.players.length > prev.players.length) Sound.play('join');
+  if (s.phase !== prev.phase) {
+    if (s.phase === 'reveal') Sound.play('reveal');
+    else if (s.phase === 'intro' || s.phase === 'answer') Sound.play('pop');
+    else if (s.phase === 'final') { Sound.play('win'); confetti(); }
+  }
+  if (s.phase === 'answer' && prev.phase === 'answer' && prev.g && s.g.q.id !== prev.g.q.id && s.g.num === prev.g.num) Sound.play('pop');
+  if (s.phase === 'reveal' && s.g.cards) {
+    for (const c of s.g.cards) {
+      const key = s.g.num + ':' + c.g;
+      if (c.state === 'done' && !seenRes.has(key)) {
+        seenRes.add(key);
+        const wait = prev.phase === 'reveal' ? 0 : 450;
+        if (c.g === myPid) {
+          const snd = c.base === 2 ? 'hit' : c.base === 1 ? 'close' : 'miss';
+          setTimeout(() => { Sound.play(snd); if (c.base === 2) buzz([20, 40, 20]); }, wait);
+        } else if (prev.phase === 'reveal') Sound.play('tap');
+      }
+    }
+  }
+}
+function setLocal(name, msg = '') { localScreen = name; connectMsg = msg; if (!view) { lastKey = ''; render(); } }
+
+function screenKey() {
+  if (!view) return 'local:' + localScreen + ':' + connectMsg + ':' + homeError + ':' + inviteCode;
+  const s = view, g = s.g;
+  if (s.phase === 'answer') return `answer:${g.num}:${g.q.id}:${g.subs[myPid] ? 's' : 'd'}`;
+  return `${s.phase}:${g ? g.num : 0}:${g ? g.r : 0}`;
+}
+function render() {
+  const key = screenKey(), fresh = key !== lastKey, scr = $('#screen');
+  if (!fresh && view && view.phase === 'answer') { patchAnswer(); updateChrome(); return; }
+  if (!fresh && !view) return;
+  const prevPhase = lastKey.split(':')[0];
+  lastKey = key;
+  let html;
+  if (!view) html = localScreen === 'connecting' ? viewConnecting() : viewHome();
+  else html = ({lobby: viewLobby, intro: viewIntro, answer: viewAnswer, reveal: viewReveal, roundEnd: viewRoundEnd, final: viewFinal})[view.phase]();
+  scr.classList.toggle('enter', fresh);
+  scr.innerHTML = html;
+  if (fresh && prevPhase !== key.split(':')[0]) window.scrollTo({top: 0});
+  updateChrome();
+  startWaves();
+  if (fresh && view && view.phase === 'answer' && !view.g.subs[myPid] && view.g.q.type === 'open' && matchMedia('(hover:hover)').matches) {
+    const el = $('[data-in="mine"]'); el && el.focus({preventScroll: true});
+  }
+}
+function updateChrome() {
+  const pill = $('#roomPill');
+  if (view && view.code) { pill.textContent = fmtCode(view.code); pill.classList.remove('hidden'); }
+  else pill.classList.add('hidden');
+  $('#soundBtn').textContent = Sound.on ? '🔊' : '🔇';
+}
+
+/* ---------- Ana ekran ---------- */
+function viewHome() {
+  const err = homeError ? `<div class="notice" role="alert">${esc(homeError)}</div>` : '';
+  const avatars = `<div class="avatars" role="radiogroup" aria-label="Avatar seç">${AVATARS.map(a =>
+    `<button class="avpick ${a === myAvatar ? 'on' : ''}" data-act="pickAv" data-av="${a}" role="radio" aria-checked="${a === myAvatar}">${a}</button>`).join('')}</div>`;
+  const join = inviteCode ? `
+    <div class="panel invite">
+      <p style="margin:0 0 14px">Seni <b>${fmtCode(inviteCode)}</b> numaralı odaya davet ettiler.</p>
+      <button class="btn primary big" data-act="joinInvite">Odaya katıl</button>
+      <div style="text-align:center;margin-top:6px"><button class="link" data-act="dropInvite">Başka bir kod gir ya da oda kur</button></div>
+    </div>` : `
+    <div class="panel">
+      <button class="btn primary big" data-act="create">Oda kur</button>
+      <div class="or" style="margin:16px 0 12px">ya da koda katıl</div>
+      <div class="join-row">
+        <input id="codeIn" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" aria-label="6 haneli oda kodu">
+        <button class="btn" data-act="join">Katıl</button>
+      </div>
+    </div>`;
+  return `
+  <section class="hero">
+    <svg class="wave" data-wave="hero" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"><path class="wa"/><path class="wb"/></svg>
+    <h1 class="title">Aynı<br>Frekans</h1>
+    <p class="lede">Birbirinizi ne kadar tanıyorsunuz? Herkes kendi cevabını yazar, sonra eşleştiği kişinin ne yazdığını tahmin eder. 2–8 kişi, uzaktan, kurulum yok.</p>
+  </section>
+  <div>
+    ${err}
+    <div class="panel">
+      <label class="lbl" for="nameIn">Adın</label>
+      <input id="nameIn" class="field" maxlength="16" autocomplete="nickname" placeholder="Örneğin Deniz" value="${esc(myName)}">
+      <div class="lbl" style="margin-top:16px">Avatarın</div>
+      ${avatars}
+    </div>
+    <div style="margin-top:14px">${join}</div>
+  </div>
+  <details class="how">
+    <summary>Nasıl oynanır?</summary>
+    <ol>
+      <li><b>Biri oda kurar</b> ve 6 haneli kodu paylaşır. Diğerleri kodu girip katılır. Sunucu kurmana gerek yok.</li>
+      <li><b>Her soruda iki şey yazarsın:</b> kendi cevabını ve eşleştiğin kişinin ne cevap vereceğine dair tahminini. İki kişiyseniz birbirinizi tahmin edersiniz; kalabalıksanız eşleşmeler her soruda değişir.</li>
+      <li><b>Cevaplar açılır.</b> Açık uçlu sorularda tahmini, hakkında tahmin yapılan kişi puanlar: bildi 2, yakın 1 puan. Seçmeli ve ölçekli sorular kendiliğinden puanlanır.</li>
+      <li><b>Üç tur var:</b> Isınma, Keşif ve Final. Sorular tur tur derinleşir; finalde puanlar iki katına çıkar.</li>
+      <li><b>Jokerler:</b> herkesin bir 🔄 soru değiştirme ve bir ×2 jokeri vardır. Kendinden emin olduğun tahminde ×2'yi kullan.</li>
+    </ol>
+  </details>
+  <p class="foot-note">Oyun verisi doğrudan tarayıcılar arasında akar.</p>`;
+}
+function viewConnecting() {
+  return `<section class="center">
+    <svg class="spinner" viewBox="0 0 64 64" aria-hidden="true"><path class="wa" d="M4 32c7-16 11-16 14 0s7 16 14 0 7-16 14 0 7 16 14 0"/><path class="wb" d="M4 32c7 16 11 16 14 0s7-16 14 0 7 16 14 0 7-16 14 0"/></svg>
+    <div style="font:600 18px var(--display)">${esc(connectMsg)}</div>
+    <div><button class="btn ghost sm" data-act="leaveNow">Vazgeç</button></div>
+  </section>`;
+}
+
+/* ---------- Lobi ---------- */
+function viewLobby() {
+  const s = view, S = s.settings, host = isHost(), dis = host ? '' : 'disabled';
+  const n = s.players.length, total = LENGTHS[S.length].per * 3, mins = Math.max(5, Math.round(total * TIMERS[S.timer].est));
+  const canLink = /^https?:/.test(location.protocol);
+  const canStart = s.players.filter(p => p.connected).length >= 2 && S.packs.length > 0;
+  const players = s.players.map(p => `
+    <li class="${p.connected ? '' : 'off'}">
+      ${p.id === myPid ? `<button class="avbtn" data-act="cycleAv" aria-label="Avatarını değiştir">${av(p)}</button>` : av(p)}
+      <span class="nm">${esc(p.name)}</span>
+      ${p.id === s.hostId ? '<span class="badge">oda sahibi</span>' : ''}
+      ${p.id === myPid ? '<span class="badge">sen</span>' : ''}
+    </li>`).join('') + (n < 2 ? `<li class="empty">Arkadaşın kodu girince burada görünecek</li>` : '');
+  const modes = Object.entries(MODES).map(([id, m]) => `
+    <button class="mode ${S.mode === id ? 'on' : ''}" data-act="mode" data-v="${id}" ${dis} aria-pressed="${S.mode === id}">
+      <span class="mt">${m.emoji} ${m.name}</span><span class="md">${m.desc}</span>
+    </button>`).join('');
+  const packs = PACKS.map(p => {
+    const c = QUESTIONS.filter(q => q.pack === p.id && !(q.duo && n > 2)).length;
+    return `<button class="chip ${S.packs.includes(p.id) ? 'on' : ''}" data-act="pack" data-v="${p.id}" ${dis} aria-pressed="${S.packs.includes(p.id)}"><span>${p.emoji}</span> ${p.name} <small>${c}</small></button>`;
+  }).join('');
+  const seg = (key, obj, sub) => `<div class="seg" role="group">${Object.entries(obj).map(([id, o]) =>
+    `<button class="${S[key] === id ? 'on' : ''}" data-act="set" data-k="${key}" data-v="${id}" ${dis} aria-pressed="${S[key] === id}">${o.name}<small>${sub(o)}</small></button>`).join('')}</div>`;
+  const tog = (key, title, sub) => `
+    <button class="tog ${S[key] ? 'on' : ''}" data-act="toggle" data-k="${key}" ${dis} aria-pressed="${!!S[key]}">
+      <span class="tt"><b>${title}</b><span>${sub}</span></span><span class="sw"></span>
+    </button>`;
+  return `
+  <section class="code-box">
+    <div class="lbl">Oda kodu</div>
+    <button class="code" data-act="copyCode" aria-label="Oda kodunu kopyala"><span>${s.code.slice(0, 3)}</span><span>${s.code.slice(3)}</span></button>
+    <div class="code-actions">
+      <button class="btn sm" data-act="copyCode">Kodu kopyala</button>
+      ${canLink ? `<button class="btn sm" data-act="copyLink">Davet linkini kopyala</button>` : ''}
+      ${canLink && navigator.share ? `<button class="btn sm" data-act="share">Paylaş</button>` : ''}
+    </div>
+    <p class="hint">${canLink ? 'Kodu ya da linki gönder; açan herkes doğrudan odaya gelir.' : 'Arkadaşın bu sayfayı açıp "koda katıl" alanına kodu yazsın.'}</p>
+  </section>
+  <section class="sec">
+    <h3>Oyuncular <span class="muted">${n}/${MAX_PLAYERS}</span></h3>
+    <ul class="plist">${players}</ul>
+  </section>
+  <section class="sec">
+    <h3>Mod ${host ? '' : '<span class="muted">oda sahibi seçiyor</span>'}</h3>
+    <div class="modes">${modes}</div>
+    <h3 style="margin-top:22px">Soru paketleri <span class="muted">${S.mode === 'ozel' ? 'özel seçim' : ''}</span></h3>
+    <div class="packs">${packs}</div>
+    <h3 style="margin-top:22px">Uzunluk</h3>
+    ${seg('length', LENGTHS, o => `${o.per * 3} soru`)}
+    <h3 style="margin-top:22px">Süre</h3>
+    ${seg('timer', TIMERS, o => o.sub)}
+    <div class="toggles" style="margin-top:14px">
+      ${tog('jokers', 'Jokerler', 'Herkese bir 🔄 değiştir ve bir ×2')}
+      ${tog('finalDouble', 'Final turunda çift puan', 'Geride kalan son turda yetişebilir')}
+    </div>
+    <p class="est"><b>${total} soru</b>, 3 tur. Yaklaşık <b>${mins} dakika</b> sürer.</p>
+  </section>
+  <section class="dock">
+    ${host ? `<button class="btn primary big" data-act="start" ${canStart ? '' : 'disabled'}>Oyunu başlat</button>
+      <p class="hint" style="text-align:center">${!S.packs.length ? 'En az bir soru paketi seç.' : n < 2 ? 'Başlamak için en az bir kişi daha gerekiyor.' : 'Herkes hazırsa başlat.'}</p>`
+      : `<div class="waiting"><div class="ok">Hazırsın</div><div class="muted">Oda sahibi başlatınca oyun açılacak.</div></div>`}
+    <div style="text-align:center;margin-top:8px"><button class="link" data-act="leave">Odadan çık</button></div>
+  </section>`;
+}
+
+/* ---------- Tur girişi ---------- */
+function viewIntro() {
+  const g = view.g, R = ROUNDS[Math.min(g.r, ROUNDS.length - 1)], n = g.rounds.length;
+  return `<section class="intro">
+    <div class="dots">${g.rounds.map((_, i) => `<i class="${i < g.r ? 'done' : i === g.r ? 'cur' : ''}"></i>`).join('')}</div>
+    <p class="kicker">Tur ${g.r + 1} / ${n}</p>
+    <h2 class="big-title">${esc(g.roundName)}</h2>
+    <p>${esc(R.desc)} ${g.rounds[g.r].n} soru.</p>
+    ${g.finalMult > 1 ? '<span class="x2">Bu turda puanlar ×2</span>' : ''}
+  </section>`;
+}
+
+/* ---------- Cevap ---------- */
+function defaultVal(q) { return q.type === 'scale' ? 5 : q.type === 'choice' ? null : ''; }
+function inputFor(q, kind, val, disabled, color) {
+  const d = disabled ? 'disabled' : '';
+  if (q.type === 'choice') {
+    return `<div class="opts" role="radiogroup">${q.opts.map((o, i) =>
+      `<button type="button" class="opt ${val !== null && val !== undefined && +val === i ? 'on' : ''}" style="--c:${color}" data-act="opt" data-kind="${kind}" data-v="${i}" ${d} role="radio" aria-checked="${val !== null && +val === i}">${esc(o)}</button>`).join('')}</div>`;
+  }
+  if (q.type === 'scale') {
+    const v = val ?? 5;
+    return `<div class="scale" style="--c:${color}">
+      <input type="range" min="0" max="10" step="1" value="${v}" data-in="${kind}" ${d} style="--p:${v * 10}%" aria-label="${kind === 'mine' ? 'Senin cevabın' : 'Tahminin'}">
+      <div class="scale-row"><span>${esc(q.lo)}</span><output data-out="${kind}">${v}</output><span>${esc(q.hi)}</span></div>
+    </div>`;
+  }
+  return `<input class="field" style="--c:${color}" data-in="${kind}" maxlength="80" value="${esc(val ?? '')}" ${d} autocomplete="off" enterkeyhint="${kind === 'mine' ? 'next' : 'send'}" placeholder="${kind === 'mine' ? 'Cevabını yaz' : 'Tahminini yaz'}">`;
+}
+function statusHTML() {
+  const g = view.g;
+  return g.order.map(id => {
+    const p = VP(id);
+    return `<span class="st ${g.subs[id] ? 'done' : ''} ${p.connected ? '' : 'off'}" title="${esc(p.name)}">${av(p, 'sm')}</span>`;
+  }).join('');
+}
+function jokersHTML(vals, submitted) {
+  const me = VP(myPid);
+  if (!view.settings.jokers) return '';
+  const sw = me.jokers.swap, x2 = me.jokers.x2;
+  return `<div class="jokers">
+    <button class="jk" data-act="swap" ${submitted || sw < 1 ? 'disabled' : ''}>🔄 Soruyu değiştir <b>${sw}</b></button>
+    <button class="jk ${vals.x2 ? 'on' : ''}" data-act="x2" ${submitted || x2 < 1 ? 'disabled' : ''} aria-pressed="${!!vals.x2}">×2 Eminim <b>${x2}</b></button>
+  </div>`;
+}
+function waitingHTML() {
+  const g = view.g, ids = g.order.filter(id => VP(id).connected), done = ids.filter(id => g.subs[id]).length;
+  return `<div class="waiting">
+    <div class="ok">Gönderildi</div>
+    <div class="muted">${done < ids.length ? `Diğerleri bekleniyor (${done}/${ids.length})` : 'Cevaplar açılıyor…'}</div>
+    <div class="row">
+      <button class="btn sm" data-act="unsubmit">Düzenle</button>
+      ${isHost() && done < ids.length ? '<button class="btn sm ghost" data-act="force">Beklemeden aç</button>' : ''}
+    </div>
+  </div>`;
+}
+function viewAnswer() {
+  const g = view.g, q = g.q, me = VP(myPid);
+  if (!g.order.includes(myPid)) return `<section class="center"><div class="muted">Bu oyunu izliyorsun.</div></section>`;
+  const t = VP(g.targets[myPid]), sub = g.subs[myPid], submitted = !!sub;
+  const dk = g.num + ':' + q.id;
+  if (draft.qid !== dk) draft = {qid: dk, mine: defaultVal(q), guess: defaultVal(q), x2: false};
+  const vals = submitted ? sub : draft, pk = PACK[q.pack];
+  return `<section>
+    <div class="meta"><span class="tag">${pk.emoji} ${pk.name}</span><span>Soru ${g.num}/${g.total} <span class="secs" id="secs"></span></span></div>
+    <div class="status" id="status">${statusHTML()}</div>
+    <h2 class="q">${esc(q.text)}</h2>
+    ${g.finalMult > 1 ? '<div class="multnote">Final turu: puanlar ×2</div>' : ''}
+  </section>
+  <section>
+    <div class="block">
+      <div class="block-h">${av(me, 'sm')} Senin cevabın</div>
+      ${inputFor(q, 'mine', vals.mine, submitted, me.color)}
+    </div>
+    <div class="block guess" style="--c:${t.color}">
+      <div class="block-h">${av(t, 'sm')} ${esc(gen(t.name))} cevabı ne sence?</div>
+      ${inputFor(q, 'guess', vals.guess, submitted, t.color)}
+    </div>
+  </section>
+  <section>
+    <div id="jokers">${jokersHTML(vals, submitted)}</div>
+    <div id="submitArea">${submitted ? waitingHTML() : `<button class="btn primary big" data-act="submit">Gönder</button><p class="err" id="formErr"></p>`}</div>
+  </section>`;
+}
+function patchAnswer() {
+  const st = $('#status'); if (st) st.innerHTML = statusHTML();
+  const submitted = !!view.g.subs[myPid];
+  const jk = $('#jokers'); if (jk) jk.innerHTML = jokersHTML(submitted ? view.g.subs[myPid] : draft, submitted);
+  if (submitted) { const sa = $('#submitArea'); if (sa) sa.innerHTML = waitingHTML(); }
+}
+function submitAnswer(auto = false) {
+  const q = view.g.q;
+  if (!auto) {
+    const ok = q.type === 'scale' || (hasAns(q, draft.mine) && hasAns(q, draft.guess));
+    if (!ok) {
+      const e = $('#formErr'); if (e) { e.textContent = q.type === 'choice' ? 'İki soruda da bir seçenek seç.' : 'Önce iki alanı da doldur.'; }
+      const b = $('[data-act="submit"]'); if (b) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
+      return;
+    }
+    Sound.play('send');
+  }
+  act('submit', {mine: draft.mine, guess: draft.guess, x2: draft.x2});
+}
+
+/* ---------- Açılış (reveal) ---------- */
+function linkSVG(c1, c2) {
+  const id = 'lg' + Math.random().toString(36).slice(2, 8);
+  return `<svg viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+    <path d="M0 7 Q6.25 0 12.5 7 T25 7 T37.5 7 T50 7 T62.5 7 T75 7 T87.5 7 T100 7" fill="none" stroke="url(#${id})" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function cardHTML(c) {
+  const q = view.g.q, G = VP(c.g), T = VP(c.t);
+  const gl = youOr(G, 'Senin tahminin', gen(G.name) + ' tahmini');
+  const tl = youOr(T, 'Senin cevabın', gen(T.name) + ' cevabı');
+  let body;
+  if (q.type === 'scale' && hasAns(q, c.ans)) {
+    const gv = hasAns(q, c.guess) ? +c.guess : null, tv = +c.ans;
+    body = `<div class="track">
+        <div class="ln"></div>
+        <div class="mk" style="left:${tv * 10}%;--c:${T.color}">${tv}<i></i></div>
+        ${gv !== null ? `<div class="mk up" style="left:${gv * 10}%;--c:${G.color}"><i></i>${gv}</div>` : ''}
+      </div>
+      <div class="track-legend"><span style="--c:${T.color}"><i></i>${esc(tl)}</span><span style="--c:${G.color}"><i></i>${esc(gl)}${gv === null ? ': boş' : ''}</span></div>
+      <div class="track-legend"><span>${esc(q.lo)}</span><span>${esc(q.hi)}</span></div>`;
+  } else {
+    const gv = showVal(q, c.guess), tv = showVal(q, c.ans);
+    body = `<div class="pair">
+      <div class="say ${gv ? '' : 'empty'}"><div class="who">${esc(gl)}</div><div class="txt">${gv ? esc(gv) : 'Boş bıraktı'}</div></div>
+      <div class="say ${tv ? '' : 'empty'}"><div class="who">${esc(tl)}</div><div class="txt">${tv ? esc(tv) : 'Cevap yok'}</div></div>
+    </div>`;
+  }
+  let foot = '';
+  if (c.state === 'na') foot = `<div class="res wait">${esc(youOr(T, 'Cevap vermediğin için', T.name + ' cevap vermediği için'))} bu tahmin puanlanmadı.</div>`;
+  else if (c.state === 'pending') {
+    foot = c.t === myPid
+      ? `<div class="judge"><p>${esc(gen(G.name))} tahmini tuttu mu?</p><div class="row">
+          <button class="btn j2" data-act="judge" data-v="2">🎯 Bildi<small>+2</small></button>
+          <button class="btn j1" data-act="judge" data-v="1">🤏 Yakın<small>+1</small></button>
+          <button class="btn" data-act="judge" data-v="0">✗ Bilemedi<small>0</small></button>
+        </div></div>`
+      : `<div class="res wait">${esc(youOr(T, 'Sen', T.name))} puanlıyor…</div>`;
+  } else {
+    const verdict = c.how === 'skip' ? 'Puanlanmadı' : !hasAns(q, c.guess) ? 'Tahmin yok'
+      : c.base === 2 ? (q.type === 'scale' && +c.guess === +c.ans ? '🎯 Tam isabet' : '🎯 Bildi') : c.base === 1 ? '🤏 Yakın' : '✗ Bilemedi';
+    const notes = [c.x2 ? '×2 joker' : '', c.mult > 1 && view.g.finalMult > 1 ? 'final ×2' : ''].filter(Boolean).join(', ');
+    foot = `<div class="res ${c.base ? '' : 'miss'}"><span class="verdict">${verdict}</span><span class="pts">${c.pts ? '+' + c.pts : '0'}${notes && c.base ? `<small>${notes}</small>` : ''}</span></div>`;
+  }
+  const other = c.g === myPid ? T : c.t === myPid ? G : null;
+  const match = !c.match ? '' : `<div class="match">⚡ Aynı frekans: ${other ? esc(other.name) + ' ile aynı cevabı verdin' : esc(G.name) + ' ve ' + esc(T.name) + ' aynı cevabı vermiş'}</div>`;
+  return `<article class="card ${c.t === myPid || c.g === myPid ? 'mine' : ''}">
+    <div class="link-row">${av(G, 'xs')}<span class="nm">${esc(youOr(G, 'Sen', G.name))}</span>${linkSVG(G.color, T.color)}<span class="nm">${esc(youOr(T, 'Sen', T.name))}</span>${av(T, 'xs')}</div>
+    ${body}${foot}${match}
+  </article>`;
+}
+function miniScores() {
+  const g = view.g, delta = {};
+  (g.cards || []).forEach(c => { if (c.state === 'done' && c.pts) delta[c.g] = (delta[c.g] || 0) + c.pts; });
+  return `<div class="mini">${[...view.players].sort((a, b) => b.score - a.score).map(p =>
+    `<span>${av(p, 'xs')} ${p.score}${delta[p.id] ? `<em>+${delta[p.id]}</em>` : ''}</span>`).join('')}</div>`;
+}
+function viewReveal() {
+  const g = view.g, q = g.q, pk = PACK[q.pack];
+  const rank = c => c.t === myPid ? 0 : c.g === myPid ? 1 : 2;
+  const cards = [...g.cards].sort((a, b) => rank(a) - rank(b));
+  const done = cards.every(c => c.state !== 'pending');
+  const ids = g.order.filter(id => VP(id).connected), rc = ids.filter(id => view.ready[id]).length, iAmReady = !!view.ready[myPid];
+  const lastInRound = g.qi === g.rounds[g.r].n - 1, lastAll = lastInRound && g.r === g.rounds.length - 1;
+  const nextLabel = lastAll ? 'Sonuçları gör' : lastInRound ? 'Tur sonucuna geç' : 'Sonraki soru';
+  return `<section>
+    <div class="meta"><span class="tag">${pk.emoji} ${pk.name}</span><span>Soru ${g.num}/${g.total}</span></div>
+    <h2 class="q sm">${esc(q.text)}</h2>
+  </section>
+  <section class="cards">${cards.map(cardHTML).join('')}</section>
+  <section>
+    <div class="reacts">${REACTS.map(e => `<button class="react" data-act="react" data-e="${e}" aria-label="Tepki: ${e}">${e}</button>`).join('')}</div>
+    ${miniScores()}
+  </section>
+  <section class="dock">
+    ${done ? `<button class="btn primary big" data-act="ready" ${iAmReady ? 'disabled' : ''}>${iAmReady ? 'Diğerleri bekleniyor' : nextLabel}</button>
+      <div class="count">${rc}/${ids.length} kişi hazır</div>${isHost() && rc < ids.length ? '<div class="count"><button class="link" data-act="force">Beklemeden geç</button></div>' : ''}`
+      : `<div class="count">Puanlamalar bekleniyor…${isHost() ? ' <button class="link" data-act="force">Atla</button>' : ''}</div>`}
+  </section>`;
+}
+
+/* ---------- Skor tablosu ---------- */
+function boardHTML() {
+  const ps = [...view.players].sort((a, b) => b.score - a.score), max = Math.max(1, ...ps.map(p => p.score));
+  let rank = 0, prev = null;
+  return `<ol class="board">${ps.map((p, i) => {
+    if (p.score !== prev) { rank = i + 1; prev = p.score; }
+    return `<li class="${rank === 1 ? 'first' : ''}" style="--c:${p.color}">
+      <span class="bar" style="width:${Math.round(p.score / max * 100)}%"></span>
+      <span class="rk">${rank}</span>${av(p, 'sm')}<span class="nm">${esc(p.name)}${p.id === myPid ? ' <span class="muted">(sen)</span>' : ''}</span><span class="sc">${p.score}</span>
+    </li>`;
+  }).join('')}</ol>`;
+}
+function viewRoundEnd() {
+  const g = view.g, nextR = ROUNDS[Math.min(g.r, ROUNDS.length - 1)];
+  const ids = g.order.filter(id => VP(id).connected), rc = ids.filter(id => view.ready[id]).length, iAmReady = !!view.ready[myPid];
+  const willDouble = g.r === g.rounds.length - 1 && view.settings.finalDouble && g.rounds.length > 1;
+  return `<section>
+    <p class="kicker">Tur ${g.r} / ${g.rounds.length} bitti</p>
+    <h2 class="big-title" style="font-size:clamp(40px,12vw,64px)">Ara skor</h2>
+  </section>
+  <section>${boardHTML()}</section>
+  <section>
+    <div class="next-up">Sıradaki tur: <b>${esc(g.rounds[g.r].name)}</b>. ${esc(nextR.desc)}${willDouble ? ' Puanlar iki kat, fark kapanabilir.' : ''}</div>
+  </section>
+  <section class="dock">
+    <button class="btn primary big" data-act="ready" ${iAmReady ? 'disabled' : ''}>${iAmReady ? 'Diğerleri bekleniyor' : 'Hazırım'}</button>
+    <div class="count">${rc}/${ids.length} kişi hazır</div>${isHost() && rc < ids.length ? '<div class="count"><button class="link" data-act="force">Beklemeden başlat</button></div>' : ''}
+  </section>`;
+}
+
+/* ---------- Final ---------- */
+function finalStats() {
+  const ps = view.players;
+  const base = ps.reduce((a, p) => a + p.st.base, 0), max = ps.reduce((a, p) => a + p.st.max, 0);
+  const pct = max ? Math.round(base / max * 100) : 0;
+  const tier = [...TIERS].reverse().find(t => pct >= t[0]);
+  const sorted = [...ps].sort((a, b) => b.score - a.score);
+  const top = sorted.filter(p => p.score === sorted[0].score);
+  const hits = ps.reduce((a, p) => a + p.st.hit, 0);
+  const best = [...ps].filter(p => p.st.max).sort((a, b) => (b.st.base / b.st.max) - (a.st.base / a.st.max))[0];
+  return {pct, tier, top, hits, best, matches: view.g.matchTotal};
+}
+function viewFinal() {
+  const f = finalStats(), host = isHost();
+  const winner = f.top.length > 1 ? `🤝 Berabere: ${f.top.map(p => esc(p.name)).join(' ve ')}` : `🏆 ${esc(f.top[0].name)} kazandı`;
+  const recap = view.history.map(h => `<li><b>${esc(h.q.text)}</b>${h.cards.map(c => {
+      const G = VP(c.g), T = VP(c.t), cls = c.state !== 'done' ? 'no' : c.base === 2 ? 'ok' : c.base === 1 ? 'meh' : 'no';
+      const mark = c.state !== 'done' ? '–' : c.base === 2 ? '✓' : c.base === 1 ? '≈' : '✗';
+      return `<div class="rc"><div class="ans"><span class="who">${esc(T.avatar)} ${esc(T.name)}:</span> ${esc(showVal(h.q, c.ans) || '—')}</div>
+        <div class="gs ${cls}">${esc(gen(G.name))} tahmini: ${esc(showVal(h.q, c.guess) || '—')} ${mark}</div></div>`;
+    }).join('')}</li>`).join('');
+  return `<section class="final">
+    <svg class="wave" data-wave="final" data-pct="${f.pct}" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"><path class="wa"/><path class="wb"/></svg>
+    <div class="pct">%${f.pct}</div>
+    <div class="tier">${esc(f.tier[1])}</div>
+    <p class="tier-d">${esc(f.tier[2])} Frekans uyumu, tüm tahminlerin ne kadar tuttuğunu gösterir.</p>
+  </section>
+  <section class="final">
+    <h2 class="winner">${winner}</h2>
+    ${boardHTML()}
+    <div class="stats">
+      <div class="stat"><b>${f.hits}</b><span>tam isabet</span></div>
+      <div class="stat"><b>${f.matches}</b><span>aynı cevap</span></div>
+      <div class="stat"><b>${f.best ? esc(f.best.avatar) : '–'}</b><span>${f.best ? 'en iyi okuyan: ' + esc(f.best.name) : 'en iyi okuyan'}</span></div>
+    </div>
+  </section>
+  <section>
+    <details class="recap"><summary>Tüm cevaplar (${view.history.length} soru)</summary><ol>${recap}</ol></details>
+  </section>
+  <section class="btn-row">
+    ${host ? '<button class="btn primary big" data-act="rematch">Rövanş: yeni sorularla tekrar</button>' : '<div class="waiting"><div class="muted">Oda sahibi rövanş başlatabilir.</div></div>'}
+    <button class="btn" data-act="copyResults">Sonuçları kopyala</button>
+    <div style="text-align:center"><button class="link" data-act="leave">Odadan çık</button></div>
+  </section>`;
+}
+function resultsText() {
+  const f = finalStats(), ps = [...view.players].sort((a, b) => b.score - a.score);
+  return `📡 Aynı Frekans sonuçları\n${ps.map((p, i) => `${i + 1}. ${p.avatar} ${p.name}: ${p.score} puan`).join('\n')}\nFrekans uyumu: %${f.pct} (${f.tier[1]})\n${f.matches} kez aynı cevap, ${f.hits} tam isabet.`;
+}
+
+/* =========================================================
+   DALGA ÇİZİMİ — oyunun imzası: iki frekans hizalanıp ayrılıyor
+   ========================================================= */
+let waveRAF = null;
+function drawWave(svg, t) {
+  const W = 600, H = 120, mid = H / 2, amp = 38, k = 2 * Math.PI / 150;
+  let delta;
+  if (svg.dataset.wave === 'final') delta = (1 - (+svg.dataset.pct || 0) / 100) * Math.PI + .12 * Math.sin(t / 900);
+  else delta = Math.PI * (.5 + .5 * Math.sin(t / 1700));
+  const ph = t / 650;
+  const path = off => {
+    let d = '';
+    for (let x = 0; x <= W; x += 5) {
+      const env = Math.sin(Math.PI * x / W) ** .8;
+      d += (x ? 'L' : 'M') + x + ' ' + (mid + amp * env * Math.sin(k * x - ph + off)).toFixed(1);
+    }
+    return d;
+  };
+  svg.querySelector('.wa').setAttribute('d', path(0));
+  svg.querySelector('.wb').setAttribute('d', path(delta));
+}
+function startWaves() {
+  const svgs = $$('svg[data-wave]');
+  if (!svgs.length) return;
+  if (reduced) { svgs.forEach(s => drawWave(s, 0)); return; }
+  if (waveRAF) return;
+  const loop = t => {
+    const list = $$('svg[data-wave]');
+    if (!list.length) { waveRAF = null; return; }
+    list.forEach(s => drawWave(s, t));
+    waveRAF = requestAnimationFrame(loop);
+  };
+  waveRAF = requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   KÜÇÜK ARAYÜZ PARÇALARI
+   ========================================================= */
+function toast(msg) {
+  const box = $('#toasts'), el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg; box.appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 2600);
+  while (box.children.length > 3) box.firstChild.remove();
+}
+function floatEmoji(e) {
+  if (!REACTS.includes(e)) return;
+  const el = document.createElement('span');
+  el.className = 'fl'; el.textContent = e;
+  el.style.left = (8 + Math.random() * 84) + '%';
+  el.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
+  $('#floaters').appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+  Sound.play('tap');
+}
+function showModal(html) { const m = $('#modal'); m.innerHTML = `<div class="box">${html}</div>`; m.classList.remove('hidden'); }
+function hideModal() { $('#modal').classList.add('hidden'); $('#modal').innerHTML = ''; }
+async function copy(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch {}
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); toast(okMsg); } catch { toast(text); }
+  ta.remove();
+}
+function inviteLink() { return location.origin + location.pathname + '?oda=' + view.code; }
+function confetti() {
+  if (reduced) return;
+  const cv = $('#confetti'), ctx = cv.getContext('2d'), dpr = devicePixelRatio || 1;
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; ctx.scale(dpr, dpr);
+  const cols = view ? view.players.map(p => p.color) : COLORS;
+  const ps = Array.from({length: 140}, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 120, y: innerHeight * .35,
+    vx: (Math.random() - .5) * 13, vy: -Math.random() * 13 - 4, s: 5 + Math.random() * 6,
+    r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[Math.floor(Math.random() * cols.length)],
+  }));
+  const t0 = performance.now();
+  const step = t => {
+    const el = t - t0;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    ps.forEach(p => {
+      p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, 1 - el / 3200);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore();
+    });
+    if (el < 3300) requestAnimationFrame(step); else ctx.clearRect(0, 0, innerWidth, innerHeight);
+  };
+  requestAnimationFrame(step);
+}
+
+// zamanlayıcı
+setInterval(() => {
+  const bar = $('#timebar');
+  if (!view || view.phase !== 'answer' || !view.g.endsAt) { bar.classList.remove('on', 'low'); lastTick = -1; return; }
+  const g = view.g, left = Math.max(0, g.endsAt + clockOffset - Date.now()), secs = Math.ceil(left / 1000);
+  bar.classList.add('on'); bar.classList.toggle('low', left < 10000);
+  bar.firstElementChild.style.width = (left / (g.dur * 1000) * 100) + '%';
+  const se = $('#secs'); if (se) se.textContent = secs + ' sn';
+  const submitted = !!g.subs[myPid];
+  if (!submitted && secs <= 5 && secs > 0 && secs !== lastTick) { lastTick = secs; Sound.play('tick'); }
+  const key = g.num + ':' + g.q.id;
+  if (left <= 0 && !submitted && autoSentFor !== key && g.order.includes(myPid)) { autoSentFor = key; submitAnswer(true); toast('Süre doldu, yazdıkların gönderildi.'); }
+}, 200);
+
+/* =========================================================
+   OLAY YÖNETİMİ
+   ========================================================= */
+function readName() {
+  const el = $('#nameIn');
+  if (el) { myName = cleanName(el.value); store.set('name', myName); }
+  if (!myName) {
+    if (el) { el.focus(); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+    toast('Önce adını yaz.');
+    return false;
+  }
+  return true;
+}
+function pushSettings(patch) {
+  const S = Object.assign({}, view.settings, patch);
+  const match = Object.entries(MODES).find(([, m]) => m.packs.length === S.packs.length && m.packs.every(p => S.packs.includes(p)));
+  if ('packs' in patch) S.mode = match ? match[0] : 'ozel';
+  act('settings', {settings: S});
+}
+
+const handlers = {
+  brand() { if (!view) return; showModal(`<h3>Odadan çıkılsın mı?</h3><p>${isHost() ? 'Oda kapanır ve herkesin bağlantısı kesilir.' : 'Oyundan ayrılırsın. Aynı kodla geri dönebilirsin.'}</p>
+      <div class="row"><button class="btn primary" data-act="leaveNow">Odadan çık</button><button class="btn ghost" data-act="closeModal">Vazgeç</button></div>`); },
+  leave() { handlers.brand(); },
+  leaveNow() { hideModal(); leaveRoom(); },
+  closeModal() { hideModal(); },
+  retryNow() { retries = 0; hideModal(); connectGuest(true); },
+  sound() { Sound.on = !Sound.on; store.set('sound', Sound.on); Sound.unlock(); Sound.play('tap'); updateChrome(); },
+  pickAv(b) {
+    myAvatar = b.dataset.av; store.set('avatar', myAvatar);
+    $$('.avpick').forEach(x => { const on = x.dataset.av === myAvatar; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+  },
+  cycleAv() {
+    const taken = new Set(view.players.map(p => p.avatar));
+    let i = AVATARS.indexOf(myAvatar);
+    for (let n = 0; n < AVATARS.length; n++) { i = (i + 1) % AVATARS.length; if (!taken.has(AVATARS[i])) break; }
+    myAvatar = AVATARS[i]; store.set('avatar', myAvatar); act('profile', {avatar: myAvatar});
+  },
+  create() { if (readName()) { homeError = ''; createRoom(); } },
+  join() {
+    if (!readName()) return;
+    const code = ($('#codeIn').value || '').replace(/\D/g, '');
+    if (code.length !== 6) { toast('Kod 6 haneli olmalı.'); $('#codeIn').focus(); return; }
+    homeError = ''; joinRoom(code);
+  },
+  joinInvite() { if (readName()) { homeError = ''; joinRoom(inviteCode); } },
+  dropInvite() { readName(); inviteCode = ''; try { history.replaceState(null, '', location.pathname); } catch {} lastKey = ''; render(); },
+  copyCode() { if (view) copy(view.code, 'Kod kopyalandı'); },
+  copyLink() { copy(inviteLink(), 'Davet linki kopyalandı'); },
+  share() { navigator.share({title: 'Aynı Frekans', text: `Aynı Frekans oynayalım mı? Oda kodu: ${fmtCode(view.code)}`, url: inviteLink()}).catch(() => {}); },
+  mode(b) { const m = MODES[b.dataset.v]; if (m) act('settings', {settings: Object.assign({}, view.settings, {mode: b.dataset.v, packs: m.packs.slice()})}); },
+  pack(b) {
+    const S = view.settings, id = b.dataset.v;
+    pushSettings({packs: S.packs.includes(id) ? S.packs.filter(x => x !== id) : [...S.packs, id]});
+  },
+  set(b) { pushSettings({[b.dataset.k]: b.dataset.v}); },
+  toggle(b) { pushSettings({[b.dataset.k]: !view.settings[b.dataset.k]}); },
+  start() { act('start'); },
+  opt(b) {
+    const kind = b.dataset.kind; draft[kind] = +b.dataset.v;
+    $$(`.opt[data-kind="${kind}"]`).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+    Sound.play('tap');
+    const e = $('#formErr'); if (e) e.textContent = '';
+  },
+  x2() { draft.x2 = !draft.x2; patchAnswer(); Sound.play('tap'); },
+  swap() { act('swap'); },
+  submit() { submitAnswer(false); },
+  unsubmit() { act('unsubmit'); },
+  judge(b) { act('judge', {v: +b.dataset.v}); },
+  ready() { act('ready'); Sound.play('tap'); },
+  force() { act('force'); },
+  react(b) { sendReact(b.dataset.e); },
+  rematch() { act('rematch'); },
+  copyResults() { copy(resultsText(), 'Sonuçlar kopyalandı'); },
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  const h = handlers[b.dataset.act];
+  if (h) { e.preventDefault(); h(b, e); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'codeIn') {
+    const digits = t.value.replace(/\D/g, '').slice(0, 6);
+    if (t.value !== digits) t.value = digits;
+    return;
+  }
+  if (t.id === 'nameIn') { myName = cleanName(t.value); store.set('name', myName); return; }
+  const kind = t.dataset.in; if (!kind) return;
+  if (t.type === 'range') {
+    draft[kind] = +t.value; t.style.setProperty('--p', t.value * 10 + '%');
+    const o = $(`[data-out="${kind}"]`); if (o) o.textContent = t.value;
+  } else {
+    draft[kind] = t.value;
+    const er = $('#formErr'); if (er) er.textContent = '';
+  }
+});
+document.addEventListener('paste', e => {
+  if (e.target.id !== 'codeIn') return;
+  const txt = (e.clipboardData || window.clipboardData).getData('text');
+  const m = txt.match(/(?:oda=)?(\d{3}\s?\d{3})/);
+  if (m) { e.preventDefault(); e.target.value = m[1].replace(/\D/g, ''); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const t = e.target;
+  if (t.id === 'codeIn') { e.preventDefault(); handlers.join(); }
+  else if (t.id === 'nameIn') { e.preventDefault(); inviteCode ? handlers.joinInvite() : (($('#codeIn') && $('#codeIn').value.length === 6) ? handlers.join() : handlers.create()); }
+  else if (t.dataset.in === 'mine' && t.type !== 'range') { e.preventDefault(); const gi = $('[data-in="guess"]'); gi && gi.focus(); }
+  else if (t.dataset.in === 'guess' && t.type !== 'range') { e.preventDefault(); submitAnswer(false); }
+});
+
+/* =========================================================
+   BAŞLAT
+   ========================================================= */
+render();
+if (inviteCode && ss.get('joined') === inviteCode && myName) joinRoom(inviteCode); // sayfa yenilendiyse odaya geri dön
+</script>
+</body>
+</html>
