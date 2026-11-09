@@ -812,7 +812,14 @@ const TIERS = [
 ];
 const MAX_PLAYERS = 8;
 const PREFIX = 'aynifrekans-v2-';
-const PEER_OPTS = Object.assign({debug: 0}, window.AF_PEER_OPTS || {});
+// STUN: cihazın dışarıdan görünen adresini bulur. TURN: doğrudan bağlantı olmazsa veriyi aktarır.
+const ICE_SERVERS = [
+  {urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302']},
+  {urls: 'stun:stun.cloudflare.com:3478'},
+  {urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp'},
+  {urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject'},
+];
+const PEER_OPTS = Object.assign({debug: 0, config: {iceServers: ICE_SERVERS}}, window.AF_PEER_OPTS || {});
 
 /* =========================================================
    YARDIMCILAR
@@ -918,6 +925,7 @@ let room = null;              // oda sahibindeki asıl durum
 let view = null;              // ekranda gösterilen (bana özel) durum
 let clockOffset = 0, hostSeen = 0, welcomed = false, leaving = false;
 let joinCode = '', retryTimer = null, retries = 0, joinTimer = null;
+let diag = {sig: false, ice: 'başlamadı', cands: new Set()};
 let hostUsed = new Set();
 let myPid = ss.get('pid') || rid(); ss.set('pid', myPid);
 let myName = store.get('name', '');
@@ -1314,11 +1322,21 @@ function joinRoom(code) {
 function connectGuest(isRetry) {
   clearTimeout(joinTimer);
   if (hostConn) { const c = hostConn; hostConn = null; try { c.close(); } catch {} }
-  joinTimer = setTimeout(() => onJoinFail('timeout', isRetry), 16000);
+  joinTimer = setTimeout(() => onJoinFail('timeout', isRetry), 30000);
+  diag = {sig: false, ice: 'başlamadı', cands: new Set()};
   const start = () => {
     if (role !== 'guest') return;
+    diag.sig = true;
     const c = peer.connect(PREFIX + joinCode, {reliable: true});
     hostConn = c;
+    setTimeout(() => {
+      const pc = c.peerConnection; if (!pc) return;
+      pc.addEventListener('icecandidate', e => { const m = e.candidate && / typ (\w+)/.exec(e.candidate.candidate); if (m) diag.cands.add(m[1]); });
+      pc.addEventListener('iceconnectionstatechange', () => {
+        diag.ice = pc.iceConnectionState;
+        if (pc.iceConnectionState === 'failed' && hostConn === c) onJoinFail('icefail', isRetry);
+      });
+    }, 0);
     c.on('open', () => {
       if (hostConn !== c) return;
       clearTimeout(joinTimer); hostSeen = Date.now();
@@ -1368,7 +1386,14 @@ function onJoinFail(kind, isRetry) {
   clearTimeout(joinTimer);
   if (role !== 'guest' || leaving) return;
   if (welcomed || isRetry) return scheduleRetry();
-  fail(errText(kind));
+  if (kind === 'timeout' && !diag.sig) kind = 'network';
+  let msg = errText(kind);
+  if (kind === 'timeout' || kind === 'icefail') {
+    const names = {host: 'yerel', srflx: 'STUN', relay: 'TURN', prflx: 'eş'};
+    const c = [...diag.cands].map(x => names[x] || x).join(', ') || 'hiç yok';
+    msg += ` (Teknik ayrıntı: sunucu bağlandı, bağlantı durumu: ${diag.ice}, bulunan yollar: ${c})`;
+  }
+  fail(msg);
 }
 function onHostLost() {
   if (role !== 'guest' || leaving) return;
@@ -1403,7 +1428,8 @@ document.addEventListener('visibilitychange', () => {
 function errText(kind) {
   return ({
     nohost: 'Bu kodla açık bir oda bulunamadı. Kodu kontrol et ve oda sahibinin sayfasının açık olduğundan emin ol.',
-    timeout: 'Odaya bağlanılamadı. Ağın doğrudan bağlantıya izin vermiyor olabilir; Wi-Fi yerine mobil veriyle dene.',
+    timeout: 'Oda bulundu ama cihazlar birbirine bağlanamadı.',
+    icefail: 'Oda bulundu ama cihazlar birbirine bağlanamadı.',
     network: 'Eşleştirme sunucusuna ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.',
     'server-error': 'Eşleştirme sunucusu şu an yanıt vermiyor. Biraz sonra tekrar dene.',
     'socket-error': 'Eşleştirme sunucusuyla bağlantı koptu. Tekrar dene.',
